@@ -1,0 +1,22 @@
+{
+  "name": "nikato-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NIKATO hyperlocal commerce platform — Supabase backend",
+  "scripts": {
+    "start": "supabase start",
+    "stop": "supabase stop",
+    "status": "supabase status",
+    "reset": "supabase db reset",
+    "migrate": "supabase db push",
+    "diff": "supabase db diff",
+    "types": "supabase gen types typescript --local > types/database.ts",
+    "functions:serve": "supabase functions serve --env-file .env.local",
+    "functions:deploy": "supabase functions deploy --project-ref $SUPABASE_PROJECT_REF",
+    "test": "deno test --allow-env --allow-net supabase/functions/**/*.test.ts",
+    "lint": "deno lint supabase/functions/"
+  },
+  "devDependencies": {
+    "supabase": "^1.200.3"
+  }
+}

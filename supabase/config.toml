@@ -1,0 +1,100 @@
+# ============================================================
+# NIKATO · supabase/config.toml
+# Local development configuration for Supabase CLI
+# ============================================================
+
+project_id = "nikato"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+ip_version = "IPv4"
+heartbeat_interval_ms = 30000
+max_concurrent_users = 200
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[storage.image_transformation]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 6
+password_requirements = ""
+
+[auth.sms]
+# Twilio or MSG91 for OTP
+enable_signup = true
+enable_confirmations = true
+template = "Your NIKATO OTP is {{ .Code }} . Valid for 5 minutes."
+
+[auth.sms.test_otp]
+# For local dev — any phone with this OTP will succeed
+"+919000000001" = "000000"
+"+919000000002" = "000000"
+"+919000000003" = "000000"
+"+919000000004" = "000000"
+
+# Hook: inject user_role into JWT access token
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
+[analytics]
+enabled = false
+port = 54327
+backend = "postgres"
+
+[functions]
+verify_jwt = true
+
+[functions.send-otp]
+verify_jwt = false     # Public — user not authenticated yet when requesting OTP
+
+[functions.nearby-shops]
+verify_jwt = false     # Allow unauthenticated browse
+
+[functions.razorpay-webhook]
+verify_jwt = false     # Razorpay webhooks have no Supabase JWT
