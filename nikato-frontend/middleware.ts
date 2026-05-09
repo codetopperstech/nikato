@@ -18,11 +18,12 @@ export async function middleware(req: NextRequest) {
         getAll() {
           return req.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
             req.cookies.set(name, value);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             res.cookies.set(name, value, {
-              ...options,
+              ...(options as any),
               httpOnly: true,
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'strict',

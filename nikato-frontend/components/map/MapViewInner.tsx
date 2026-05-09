@@ -19,7 +19,7 @@ async function getLeaflet() {
   if (!L) {
     L = await import('leaflet');
     // Fix default icon paths broken by webpack
-    delete (L.Icon.Default.prototype as Record<string, unknown>)._getIconUrl;
+    delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: '/leaflet/marker-icon-2x.png',
       iconUrl: '/leaflet/marker-icon.png',

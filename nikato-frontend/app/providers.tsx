@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
 import { useAuthStore } from '@/store/auth';
+import type { Profile } from '@/types';
 
 function AuthListener() {
   const { setUser, setSession, setProfile, setLoading, reset } = useAuthStore();
@@ -35,7 +36,7 @@ function AuthListener() {
           .select('*')
           .eq('id', session.user.id)
           .single();
-        setProfile(profile);
+        setProfile(profile as unknown as Profile | null);
       } else {
         reset();
       }

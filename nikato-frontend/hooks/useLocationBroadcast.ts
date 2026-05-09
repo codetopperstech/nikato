@@ -58,10 +58,9 @@ export function useLocationBroadcast(enabled: boolean) {
       clearInterval(interval);
       if (channelRef.current) {
         // Mark offline
-        supabase.from('delivery_locations').upsert(
-          { delivery_partner_id: uid, is_online: false, updated_at: new Date().toISOString() },
-          { onConflict: 'delivery_partner_id' }
-        );
+        supabase.from('delivery_locations')
+          .update({ is_online: false, updated_at: new Date().toISOString() })
+          .eq('delivery_partner_id', uid);
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }

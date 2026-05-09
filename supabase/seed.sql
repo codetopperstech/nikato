@@ -9,6 +9,17 @@
 -- signing in with these phones using OTP "000000".
 
 -- ─────────────────────────────────────────────────────────────
+-- Auth users (must exist before profiles FK can be satisfied)
+-- ─────────────────────────────────────────────────────────────
+INSERT INTO auth.users (instance_id, id, aud, role, phone, phone_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin, encrypted_password)
+VALUES
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', '+919000000001', now(), now(), now(), '{"provider":"phone","providers":["phone"]}', '{}', false, ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', '+919000000002', now(), now(), now(), '{"provider":"phone","providers":["phone"]}', '{}', false, ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', '+919000000003', now(), now(), now(), '{"provider":"phone","providers":["phone"]}', '{}', false, ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', '+919000000004', now(), now(), now(), '{"provider":"phone","providers":["phone"]}', '{}', false, '')
+ON CONFLICT (id) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────
 -- Profiles
 -- ─────────────────────────────────────────────────────────────
 INSERT INTO public.profiles (id, phone, full_name, role) VALUES

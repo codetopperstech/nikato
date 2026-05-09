@@ -20,11 +20,6 @@ export function getSupabaseBrowserClient() {
   client = createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        // Handled by SSR package — uses secure httpOnly cookies
-      },
-    }
   );
 
   return client;

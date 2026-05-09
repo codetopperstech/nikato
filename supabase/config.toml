@@ -30,8 +30,6 @@ max_client_conn = 100
 [realtime]
 enabled = true
 ip_version = "IPv4"
-heartbeat_interval_ms = 30000
-max_concurrent_users = 200
 
 [studio]
 enabled = true
@@ -50,7 +48,7 @@ enabled = true
 file_size_limit = "50MiB"
 
 [storage.image_transformation]
-enabled = true
+enabled = false
 
 [auth]
 enabled = true
@@ -70,6 +68,12 @@ enable_signup = true
 enable_confirmations = true
 template = "Your NIKATO OTP is {{ .Code }} . Valid for 5 minutes."
 
+[auth.sms.twilio]
+enabled = true
+account_sid = "AC00000000000000000000000000000000"
+auth_token = "00000000000000000000000000000000"
+message_service_sid = "MG00000000000000000000000000000000"
+
 [auth.sms.test_otp]
 # For local dev — any phone with this OTP will succeed
 "+919000000001" = "000000"
@@ -87,14 +91,11 @@ enabled = false
 port = 54327
 backend = "postgres"
 
-[functions]
-verify_jwt = true
-
 [functions.send-otp]
-verify_jwt = false     # Public — user not authenticated yet when requesting OTP
+verify_jwt = false
 
 [functions.nearby-shops]
-verify_jwt = false     # Allow unauthenticated browse
+verify_jwt = false
 
 [functions.razorpay-webhook]
-verify_jwt = false     # Razorpay webhooks have no Supabase JWT
+verify_jwt = false

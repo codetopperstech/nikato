@@ -17,8 +17,8 @@ import { formatPrice, cn } from '@/lib/utils';
 
 // ── CartItem ──────────────────────────────────────────────────
 
-function CartItem({ item }: { item: ReturnType<typeof useCartStore>['items'][0] }) {
-  const { updateQty, removeItem } = useCartStore();
+function CartItem({ item }: { item: import('@/types').CartItem }) {
+  const { updateQty } = useCartStore();
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
