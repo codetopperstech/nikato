@@ -1,0 +1,19 @@
+# Backend
+node_modules/
+.env.local
+.env.*.local
+
+# Supabase local dev
+.branches
+.temp
+
+# nikato-frontend
+nikato-frontend/.next/
+nikato-frontend/node_modules/
+nikato-frontend/.env.local
+nikato-frontend/.env.*.local
+nikato-frontend/out/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,8 +1,8 @@
 {
-  "name": "nikato-backend",
+  "name": "nikato",
   "version": "1.0.0",
   "private": true,
-  "description": "NIKATO hyperlocal commerce platform — Supabase backend",
+  "description": "NIKATO hyperlocal delivery platform — monorepo (Supabase backend + Next.js frontend)",
   "scripts": {
     "start": "supabase start",
     "stop": "supabase stop",
@@ -14,9 +14,16 @@
     "functions:serve": "supabase functions serve --env-file .env.local",
     "functions:deploy": "supabase functions deploy --project-ref $SUPABASE_PROJECT_REF",
     "test": "deno test --allow-env --allow-net supabase/functions/**/*.test.ts",
-    "lint": "deno lint supabase/functions/"
+    "lint": "deno lint supabase/functions/",
+    "frontend:dev": "cd nikato-frontend && npm run dev",
+    "frontend:build": "cd nikato-frontend && npm run build",
+    "frontend:start": "cd nikato-frontend && npm start",
+    "frontend:lint": "cd nikato-frontend && npm run lint",
+    "frontend:type-check": "cd nikato-frontend && npm run type-check",
+    "dev": "concurrently \"npm run start\" \"npm run frontend:dev\""
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "supabase": "^1.200.3"
   }
 }
