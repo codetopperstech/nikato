@@ -11,13 +11,10 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase/client';
-import { loginSchema, type AddressFormData } from '@/lib/validations';
-import { z } from 'zod';
+import { emailLoginSchema, type EmailLoginFormData } from '@/lib/validations';
 import { Button, Input } from '@/components/ui';
-import { Phone, ArrowRight } from 'lucide-react';
+import { Mail, ArrowRight } from 'lucide-react';
 import { toast } from '@/store/ui';
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,19 +24,16 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { phone: '+91' },
+  } = useForm<EmailLoginFormData>({
+    resolver: zodResolver(emailLoginSchema),
+    defaultValues: { email: '' },
   });
 
-  const phone = watch('phone');
-
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: EmailLoginFormData) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        phone: data.phone,
+        email: data.email,
       });
 
       if (error) {
@@ -47,8 +41,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Store phone in sessionStorage for OTP page
-      sessionStorage.setItem('nikato_otp_phone', data.phone);
+      sessionStorage.setItem('nikato_otp_email', data.email);
       router.push('/otp');
     } catch {
       toast.error('Something went wrong', 'Please try again');
@@ -82,18 +75,18 @@ export default function LoginPage() {
             Welcome back 👋
           </h2>
           <p className="text-sm text-gray-500 mb-8">
-            Enter your mobile number to continue
+            Enter your email to continue
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
-              label="Mobile number"
-              type="tel"
-              placeholder="+91XXXXXXXXXX"
-              leftAddon={<Phone size={16} />}
-              error={errors.phone?.message}
-              hint="Format: +91 followed by 10-digit mobile number"
-              {...register('phone')}
+              label="Email address"
+              type="email"
+              placeholder="you@example.com"
+              leftAddon={<Mail size={16} />}
+              error={errors.email?.message}
+              hint="We'll send a 6-digit code to this email"
+              {...register('email')}
             />
 
             <Button
@@ -110,7 +103,6 @@ export default function LoginPage() {
 
           <p className="text-xs text-gray-400 text-center mt-6">
             By continuing, you agree to our Terms of Service and Privacy Policy.
-            Standard SMS rates may apply.
           </p>
         </div>
       </div>

@@ -20,6 +20,11 @@ export const loginSchema = z.object({
   phone: phoneSchema,
 });
 
+export const emailLoginSchema = z.object({
+  email: z.string().email('Enter a valid email address'),
+});
+export type EmailLoginFormData = z.infer<typeof emailLoginSchema>;
+
 export const otpVerifySchema = z.object({
   phone: phoneSchema,
   token: otpSchema,

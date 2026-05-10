@@ -15,7 +15,7 @@ import { toast } from '@/store/ui';
 
 export default function OTPPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [canResend, setCanResend] = useState(false);
@@ -23,12 +23,12 @@ export default function OTPPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('nikato_otp_phone');
+    const stored = sessionStorage.getItem('nikato_otp_email');
     if (!stored) {
       router.replace('/login');
       return;
     }
-    setPhone(stored);
+    setEmail(stored);
     startCountdown();
   }, [router]);
 
@@ -83,9 +83,9 @@ export default function OTPPage() {
     setIsLoading(true);
     try {
       const { error, data } = await supabase.auth.verifyOtp({
-        phone,
+        email,
         token,
-        type: 'sms',
+        type: 'email',
       });
 
       if (error) {
@@ -96,7 +96,7 @@ export default function OTPPage() {
       }
 
       toast.success('Logged in successfully!');
-      sessionStorage.removeItem('nikato_otp_phone');
+      sessionStorage.removeItem('nikato_otp_email');
 
       // Redirect based on role
       const role = data.session?.user?.app_metadata?.user_role;
@@ -113,7 +113,7 @@ export default function OTPPage() {
 
   const handleResend = async () => {
     if (!canResend) return;
-    const { error } = await supabase.auth.signInWithOtp({ phone });
+    const { error } = await supabase.auth.signInWithOtp({ email });
     if (error) {
       toast.error('Failed to resend OTP');
     } else {
@@ -149,7 +149,7 @@ export default function OTPPage() {
             We sent a 6-digit code to
           </p>
           <p className="text-sm font-bold text-gray-900 text-center mb-8">
-            {phone}
+            {email}
           </p>
 
           {/* OTP inputs */}
