@@ -1,112 +1,90 @@
 'use client';
-
-import { useEffect } from 'react';
 import Link from 'next/link';
-import { MapPin, ArrowRight, Zap, Clock, ShieldCheck } from 'lucide-react';
-import { Button, Skeleton } from '@/components/ui';
-import { useGeolocation } from '@/hooks/useGeolocation';
-import { useNearbyShops } from '@/hooks/useNearbyShops';
-import { useAuthStore } from '@/store/auth';
-import { ShopCard } from '@/components/shop/ShopCard';
-
-function ShopSkeleton() {
-  return (
-    <div className="rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100">
-      <Skeleton className="h-40 w-full rounded-none" />
-      <div className="p-4 space-y-2">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-        <Skeleton className="h-3 w-1/3" />
-      </div>
-    </div>
-  );
-}
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuthStore();
-  const { coords, requestGPS, hasLocation, permissionState } = useGeolocation();
-  const { data: shops, isLoading } = useNearbyShops(coords?.lat, coords?.lng);
+  const [shops, setShops] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!hasLocation && permissionState === 'unknown') requestGPS();
-  }, [hasLocation, permissionState, requestGPS]);
+    supabase.from('shops').select('*').eq('is_approved', true).eq('is_open', true).limit(6).then(({ data }) => {
+      if (data) setShops(data);
+    });
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
-      <div className="relative bg-gradient-to-br from-[#FF6B35] via-[#FF8147] to-[#FFB347] overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/3 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/3 -translate-x-1/4" />
-        <div className="relative max-w-lg mx-auto px-6 pt-16 pb-20 text-white">
-          <div className="flex items-center justify-between mb-10">
-            <span className="text-2xl font-black tracking-tighter drop-shadow">NIKATO</span>
-            {isAuthenticated ? (
-            ) : (
-            )}
-          </div>
-          <h1 className="text-4xl font-black leading-tight mb-3 drop-shadow-sm">
+    <div>
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white px-6 py-16">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-4xl font-black leading-tight mb-4">
             Your neighbourhood,<br />delivered in minutes
           </h1>
-          <p className="text-white/80 text-base mb-8">Fresh groceries, hot food, and essentials from shops right around you.</p>
-          {!hasLocation ? (
-            <Button variant="secondary" size="lg" onClick={requestGPS} leftIcon={<MapPin size={18} />} className="bg-white text-[#FF6B35] hover:bg-gray-50 w-full sm:w-auto">
-              {permissionState === 'requesting' ? 'Detecting location…' : 'Find shops near me'}
-            </Button>
-          ) : (
-            <Link href="/shops">
-              <Button variant="secondary" size="lg" rightIcon={<ArrowRight size={18} />} className="bg-white text-[#FF6B35] hover:bg-gray-50">
-                {shops?.length ? `${shops.length} shops nearby` : 'Browse nearby shops'}
-              </Button>
-            </Link>
-          )}
+          <p className="text-orange-100 mb-8 text-lg">
+            Fresh groceries, hot food, and essentials from shops right around you.
+          </p>
+          <Link href="/shops"
+            className="inline-block bg-white text-orange-500 px-8 py-3 rounded-full font-bold text-lg hover:bg-orange-50 transition shadow-lg">
+            Browse nearby shops →
+          </Link>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-6 -mt-5 relative z-10">
-        <div className="grid grid-cols-3 gap-3">
+      {/* Features */}
+      <div className="bg-white px-6 py-8">
+        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4 text-center">
           {[
-            { icon: <Zap size={18} className="text-[#FF6B35]" />, label: 'Fast delivery' },
-            { icon: <Clock size={18} className="text-[#FF6B35]" />, label: 'Live tracking' },
-            { icon: <ShieldCheck size={18} className="text-[#FF6B35]" />, label: 'Safe & secure' },
-          ].map((item) => (
-            <div key={item.label} className="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 shadow-sm border border-gray-100 text-center">
-              {item.icon}
-              <span className="text-xs font-semibold text-gray-700">{item.label}</span>
+            { icon: '⚡', title: 'Fast delivery', desc: 'In 30 mins' },
+            { icon: '📍', title: 'Live tracking', desc: 'Real-time' },
+            { icon: '🔒', title: 'Safe & secure', desc: 'Trusted shops' },
+          ].map(f => (
+            <div key={f.title} className="p-4 rounded-2xl bg-orange-50">
+              <div className="text-3xl mb-2">{f.icon}</div>
+              <div className="font-semibold text-sm">{f.title}</div>
+              <div className="text-xs text-gray-400">{f.desc}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-6 py-8">
-        {hasLocation && (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-black text-gray-900">Nearby Shops</h2>
-              <Link href="/shops" className="text-sm text-[#FF6B35] font-semibold flex items-center gap-1 hover:underline">
-                See all <ArrowRight size={14} />
-              </Link>
-            </div>
-            {isLoading ? (
-              <div className="grid gap-4"><ShopSkeleton /><ShopSkeleton /></div>
-            ) : shops && shops.length > 0 ? (
-              <div className="grid gap-4">
-                {shops.slice(0, 4).map((shop) => <ShopCard key={shop.id} shop={shop} />)}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-                <span className="text-5xl">🏪</span>
-                <p className="text-gray-600 font-semibold mt-3">No shops found nearby</p>
-              </div>
-            )}
-          </>
-        )}
-        {!hasLocation && permissionState === 'denied' && (
-          <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200 mt-4">
-            <MapPin size={40} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-600 font-semibold">Location access denied</p>
-            <p className="text-sm text-gray-400 mt-1 mb-4">Enable location in browser settings</p>
-            <Link href="/shops"><Button variant="outline" size="sm">Browse all shops</Button></Link>
+      {/* Nearby Shops */}
+      <div className="px-6 py-8 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Nearby Shops</h2>
+            <Link href="/shops" className="text-orange-500 text-sm font-semibold">See all →</Link>
           </div>
-        )}
+          {shops.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <div className="text-4xl mb-3">🏪</div>
+              <p>No shops available right now</p>
+              <Link href="/shops" className="text-orange-500 text-sm mt-2 inline-block">Browse all shops</Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {shops.map(shop => (
+                <Link key={shop.id} href={`/shops/${shop.id}`}
+                  className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition border border-gray-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-2xl">
+                      {shop.logo_url ? <img src={shop.logo_url} className="w-full h-full object-cover rounded-xl" /> : '🏪'}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm">{shop.name}</h3>
+                      <p className="text-xs text-gray-400">{shop.city}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${shop.is_open ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>
+                      {shop.is_open ? '● Open' : '● Closed'}
+                    </span>
+                    <span className="text-xs text-gray-400">~{shop.avg_delivery_minutes} mins</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
