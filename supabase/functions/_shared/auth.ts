@@ -2,7 +2,7 @@
 // JWT verification helpers for Edge Functions
 
 import { getUserClient } from "./supabase.ts";
-import { errorResponse } from "./cors.ts";
+import { errorResponse, getCorsHeaders } from "./cors.ts";
 
 export interface AuthUser {
   id: string;
@@ -23,7 +23,7 @@ export async function requireAuth(
   if (!authHeader) {
     return {
       user: null,
-      error: errorResponse("UNAUTHORIZED", "Missing authorization header", 401),
+      error: errorResponse("UNAUTHORIZED", "Missing authorization header", 401, req),
     };
   }
 
@@ -36,11 +36,11 @@ export async function requireAuth(
   if (error || !user) {
     return {
       user: null,
-      error: errorResponse("UNAUTHORIZED", "Invalid or expired token", 401),
+      error: errorResponse("UNAUTHORIZED", "Invalid or expired token", 401, req),
     };
   }
 
-  // Role is injected via custom JWT claim or fallback to profile
+  // Role check: first from app_metadata (set by admin), then user_metadata, then default
   const role: string =
     (user.app_metadata?.user_role as string) ??
     (user.user_metadata?.role as string) ??
@@ -54,7 +54,8 @@ export async function requireAuth(
         error: errorResponse(
           "FORBIDDEN",
           `Requires role: ${allowed.join(" or ")}`,
-          403
+          403,
+          req
         ),
       };
     }

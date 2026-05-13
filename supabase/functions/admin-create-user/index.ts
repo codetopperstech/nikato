@@ -1,7 +1,7 @@
 // supabase/functions/admin-create-user/index.ts
 // Admin creates shop_owner or delivery partner accounts
 
-import { handleCors, successResponse, errorResponse } from "../_shared/cors.ts";
+import { handleCors, successResponse, errorResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { requireAuth } from "../_shared/auth.ts";
 import { getAdminClient } from "../_shared/supabase.ts";
 
@@ -36,16 +36,16 @@ Deno.serve(async (req: Request) => {
     // Validate
     const e164 = /^\+[1-9]\d{6,14}$/;
     if (!phone || !e164.test(phone)) {
-      return errorResponse("VALIDATION_ERROR", "Invalid phone number (E.164 format required).");
+      return errorResponse("VALIDATION_ERROR", "Invalid phone number (E.164 format required).", 400, req);
     }
     if (!["shop_owner", "delivery"].includes(role)) {
-      return errorResponse("VALIDATION_ERROR", "role must be shop_owner or delivery.");
+      return errorResponse("VALIDATION_ERROR", "role must be shop_owner or delivery.", 400, req);
     }
     if (!full_name?.trim()) {
-      return errorResponse("VALIDATION_ERROR", "full_name is required.");
+      return errorResponse("VALIDATION_ERROR", "full_name is required.", 400, req);
     }
     if (role === "shop_owner" && !shop) {
-      return errorResponse("VALIDATION_ERROR", "shop details are required for shop_owner role.");
+      return errorResponse("VALIDATION_ERROR", "shop details are required for shop_owner role.", 400, req);
     }
 
     const supabase = getAdminClient();
@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (existing) {
-      return errorResponse("CONFLICT", "A user with this phone number already exists.", 409);
+      return errorResponse("CONFLICT", "A user with this phone number already exists.", 409, req);
     }
 
     // Create auth user (no password — they'll use OTP)
@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
 
     if (createErr || !authUser.user) {
       console.error("Auth user creation error:", createErr);
-      return errorResponse("CREATE_FAILED", "Failed to create auth user.", 500);
+      return errorResponse("CREATE_FAILED", createErr?.message ?? "Failed to create auth user.", 500, req);
     }
 
     // Update profile with role and name (handle_new_user trigger creates the row)
@@ -114,12 +114,15 @@ Deno.serve(async (req: Request) => {
 
     // Create delivery_locations row for delivery partners
     if (role === "delivery") {
-      await supabase.from("delivery_locations").insert({
+      const { error: dlErr } = await supabase.from("delivery_locations").insert({
         delivery_partner_id: authUser.user.id,
         lat: 0,
         lng: 0,
         is_online: false,
       });
+      if (dlErr) {
+        console.error("delivery_locations insert error:", dlErr);
+      }
     }
 
     return successResponse(
@@ -129,10 +132,11 @@ Deno.serve(async (req: Request) => {
         role,
         shop_id: shopId,
       },
-      201
+      201,
+      req
     );
   } catch (err) {
     console.error("admin-create-user error:", err);
-    return errorResponse("INTERNAL_ERROR", "Failed to create user.", 500);
+    return errorResponse("INTERNAL_ERROR", String(err), 500, req);
   }
 });

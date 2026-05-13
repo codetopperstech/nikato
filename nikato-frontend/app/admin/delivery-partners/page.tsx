@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
 import { DataTable, type Column } from '@/components/admin/DataTable';
 import { Badge, Skeleton } from '@/components/ui';
 import { formatPrice, formatRelativeTime } from '@/lib/utils';
@@ -13,38 +12,16 @@ type DPRow = Profile & {
 };
 
 export default function AdminDeliveryPartnersPage() {
-  const { data: partners = [], isLoading } = useQuery<DPRow[]>({
+  const { data: partners = [], isLoading, error } = useQuery<DPRow[]>({
     queryKey: ['admin-delivery-partners'],
     queryFn: async () => {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'delivery')
-        .order('full_name');
-
-      const ids = (profiles ?? []).map((p) => p.id);
-      if (ids.length === 0) return [];
-
-      const [{ data: locations }, { data: orders }] = await Promise.all([
-        supabase.from('delivery_locations').select('delivery_partner_id, is_online, updated_at').in('delivery_partner_id', ids),
-        supabase.from('orders').select('delivery_partner_id, delivery_earning').in('delivery_partner_id', ids).eq('status', 'delivered'),
-      ]);
-
-      const locMap: Record<string, { is_online: boolean; updated_at: string }> = {};
-      (locations ?? []).forEach((l) => { locMap[l.delivery_partner_id] = l; });
-
-      const earningsMap: Record<string, number> = {};
-      (orders ?? []).forEach((o) => {
-        if (o.delivery_partner_id) {
-          earningsMap[o.delivery_partner_id] = (earningsMap[o.delivery_partner_id] ?? 0) + (o.delivery_earning ?? 0);
-        }
-      });
-
-      return (profiles ?? []).map((p) => ({
-        ...(p as Profile),
-        location: locMap[p.id] ?? null,
-        earnings: earningsMap[p.id] ?? 0,
-      }));
+      const res = await fetch('/api/admin/delivery-partners');
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error ?? 'Failed to fetch delivery partners');
+      }
+      const json = await res.json();
+      return json.partners ?? [];
     },
     staleTime: 30000,
     refetchInterval: 30000,
@@ -77,6 +54,11 @@ export default function AdminDeliveryPartnersPage() {
   return (
     <div className="p-4 lg:p-6 max-w-5xl">
       <h1 className="text-2xl font-black text-gray-900 mb-4">Delivery Partners</h1>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl mb-4 text-sm">
+          ⚠️ {(error as Error).message}
+        </div>
+      )}
       {isLoading ? (
         <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
       ) : (
