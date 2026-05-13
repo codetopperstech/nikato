@@ -1,8 +1,6 @@
 // supabase/functions/_shared/auth.ts
-// JWT verification helpers for Edge Functions
-
-import { getUserClient } from "./supabase.ts";
-import { errorResponse, getCorsHeaders } from "./cors.ts";
+import { getAdminClient, getUserClient } from "./supabase.ts";
+import { errorResponse } from "./cors.ts";
 
 export interface AuthUser {
   id: string;
@@ -10,10 +8,6 @@ export interface AuthUser {
   phone: string;
 }
 
-/**
- * Verifies the JWT from the Authorization header.
- * Returns the authenticated user or an error Response.
- */
 export async function requireAuth(
   req: Request,
   requiredRole?: string | string[]
@@ -27,11 +21,9 @@ export async function requireAuth(
     };
   }
 
-  const client = getUserClient(authHeader);
-  const {
-    data: { user },
-    error,
-  } = await client.auth.getUser();
+  // Step 1: Verify JWT and get user id
+  const userClient = getUserClient(authHeader);
+  const { data: { user }, error } = await userClient.auth.getUser();
 
   if (error || !user) {
     return {
@@ -40,12 +32,17 @@ export async function requireAuth(
     };
   }
 
-  // Role check: first from app_metadata (set by admin), then user_metadata, then default
-  const role: string =
-    (user.app_metadata?.user_role as string) ??
-    (user.user_metadata?.role as string) ??
-    "customer";
+  // Step 2: Get role from profiles table (service role client — bypasses RLS)
+  const adminClient = getAdminClient();
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
 
+  const role: string = profile?.role ?? "customer";
+
+  // Step 3: Check required role
   if (requiredRole) {
     const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
     if (!allowed.includes(role)) {
@@ -62,11 +59,7 @@ export async function requireAuth(
   }
 
   return {
-    user: {
-      id: user.id,
-      role,
-      phone: user.phone ?? "",
-    },
+    user: { id: user.id, role, phone: user.phone ?? "" },
     error: null,
   };
 }
