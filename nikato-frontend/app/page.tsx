@@ -40,9 +40,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-10">
             <span className="text-2xl font-black tracking-tighter drop-shadow">NIKATO</span>
             {isAuthenticated ? (
-              <Link href="/shops" className="text-sm font-semibold bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-1.5 rounded-full transition-colors">Browse shops</Link>
             ) : (
-              <Link href="/login" className="text-sm font-semibold bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-1.5 rounded-full transition-colors">Login</Link>
             )}
           </div>
           <h1 className="text-4xl font-black leading-tight mb-3 drop-shadow-sm">
