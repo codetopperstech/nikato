@@ -1,57 +1,95 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import Link from 'next/link';
 
 export default function AdminShopsPage() {
   const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('all');
 
-  useEffect(() => {
-    async function fetchShops() {
-      const { data, error } = await supabase
-        .from('shops')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (data) setShops(data);
-      setLoading(false);
-    }
-    fetchShops();
-  }, []);
+  const fetchShops = async () => {
+    let q = supabase.from('shops').select('*, profiles!owner_id(full_name, phone)').order('created_at', { ascending: false });
+    const { data } = await q;
+    setShops(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchShops(); }, []);
 
   const toggleApprove = async (id: string, current: boolean) => {
     await supabase.from('shops').update({ is_approved: !current }).eq('id', id);
-    setShops(shops.map(s => s.id === id ? {...s, is_approved: !current} : s));
+    setShops(s => s.map(x => x.id === id ? { ...x, is_approved: !current } : x));
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  const toggleOpen = async (id: string, current: boolean) => {
+    await supabase.from('shops').update({ is_open: !current }).eq('id', id);
+    setShops(s => s.map(x => x.id === id ? { ...x, is_open: !current } : x));
+  };
+
+  const filtered = shops.filter(s =>
+    filter === 'all' ? true : filter === 'approved' ? s.is_approved : !s.is_approved
+  );
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">All Shops ({shops.length})</h1>
-      <div className="space-y-4">
-        {shops.map(shop => (
-          <div key={shop.id} className="bg-white rounded-xl p-4 shadow flex justify-between items-center">
-            <div>
-              <h2 className="font-bold text-lg">{shop.name}</h2>
-              <p className="text-gray-500 text-sm">{shop.city} · {shop.phone}</p>
-              <p className="text-gray-400 text-xs">{shop.address_line}</p>
-            </div>
-            <div className="flex gap-2 items-center">
-              <span className={`px-3 py-1 rounded-full text-sm ${shop.is_open ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {shop.is_open ? 'Open' : 'Closed'}
-              </span>
-              <button
-                onClick={() => toggleApprove(shop.id, shop.is_approved)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold ${shop.is_approved ? 'bg-red-100 text-red-600' : 'bg-green-500 text-white'}`}
-              >
-                {shop.is_approved ? 'Revoke' : 'Approve'}
-              </button>
-            </div>
-          </div>
-        ))}
-        {shops.length === 0 && <p className="text-gray-400">No shops yet.</p>}
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Shops</h1>
+          <p className="text-gray-400 text-sm">{shops.length} total shops</p>
+        </div>
+        <Link href="/admin/create-shop"
+          className="bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-orange-600 transition">
+          + Create Shop
+        </Link>
       </div>
+
+      <div className="flex gap-2 mb-4">
+        {(['all', 'pending', 'approved'] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition ${filter === f ? 'bg-orange-500 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
+            {f} {f === 'pending' ? `(${shops.filter(s => !s.is_approved).length})` : ''}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="text-center py-16 text-orange-500 animate-pulse">Loading shops...</div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.length === 0 ? (
+            <div className="bg-white rounded-2xl border p-8 text-center text-gray-400">
+              <div className="text-4xl mb-3">🏪</div>
+              <p>No shops found</p>
+            </div>
+          ) : filtered.map(shop => (
+            <div key={shop.id} className="bg-white rounded-2xl border shadow-sm p-4 flex items-center justify-between hover:shadow-md transition">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-2xl">🏪</div>
+                <div>
+                  <h3 className="font-bold text-sm">{shop.name}</h3>
+                  <p className="text-xs text-gray-400">{shop.city} · {shop.phone}</p>
+                  <p className="text-xs text-gray-300">Owner: {shop.profiles?.full_name || shop.profiles?.phone || 'Unknown'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => toggleOpen(shop.id, shop.is_open)}
+                  className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${shop.is_open ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {shop.is_open ? '● Open' : '● Closed'}
+                </button>
+                <button onClick={() => toggleApprove(shop.id, shop.is_approved)}
+                  className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${shop.is_approved ? 'bg-blue-100 text-blue-600 hover:bg-red-100 hover:text-red-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                  {shop.is_approved ? 'Approved ✓' : 'Approve →'}
+                </button>
+                <Link href={`/admin/shops/${shop.id}`}
+                  className="text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
+                  Details
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

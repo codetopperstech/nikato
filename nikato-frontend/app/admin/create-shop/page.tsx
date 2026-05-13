@@ -1,125 +1,105 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
-import { toast } from '@/store/ui';
-import { Button, Input, Card } from '@/components/ui';
 
-const schema = z.object({
-  owner_phone: z.string().min(10, 'Phone required'),
-  owner_name: z.string().min(2, 'Name required'),
-  shop_name: z.string().min(2, 'Shop name required'),
-  shop_phone: z.string().min(10, 'Shop phone required'),
-  address_line: z.string().min(5),
-  city: z.string().min(2),
-  pincode: z.string().length(6),
-  lat: z.coerce.number(),
-  lng: z.coerce.number(),
-  delivery_radius_km: z.coerce.number().min(0.5).max(50),
-  min_order_amount: z.coerce.number().min(0),
-  commission_rate: z.coerce.number().min(0).max(1),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-export default function AdminCreateShopPage() {
+export default function CreateShopPage() {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { delivery_radius_km: 5, min_order_amount: 100, commission_rate: 0.10, lat: 0, lng: 0 },
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [form, setForm] = useState({
+    owner_phone: '', owner_name: '', shop_name: '', shop_phone: '',
+    address_line: '', city: '', pincode: '', lat: '19.0760', lng: '72.8777',
+    delivery_radius_km: '5', min_order_amount: '100', commission_rate: '0.1',
   });
 
-  async function onSubmit(values: FormValues) {
-    setSaving(true);
+  const handle = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const submit = async () => {
+    setLoading(true); setError(''); setSuccess('');
     try {
-      // 1. Find or create owner profile by phone
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('phone', values.owner_phone)
-        .maybeSingle();
-
-      let ownerId: string;
-      if (existingProfile) {
-        ownerId = existingProfile.id;
-        // Update role if needed
-        await supabase.from('profiles').update({ role: 'shop_owner', full_name: values.owner_name }).eq('id', ownerId);
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-create-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            phone: form.owner_phone,
+            role: 'shop_owner',
+            full_name: form.owner_name,
+            shop: {
+              name: form.shop_name,
+              phone: form.shop_phone,
+              address_line: form.address_line,
+              city: form.city,
+              pincode: form.pincode,
+              lat: parseFloat(form.lat),
+              lng: parseFloat(form.lng),
+              delivery_radius_km: parseFloat(form.delivery_radius_km),
+            },
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setError(json.error?.message || 'Failed to create shop');
       } else {
-        toast.error('Owner phone not found', 'User must register first via OTP');
-        setSaving(false);
-        return;
+        setSuccess(`✅ Shop created! Owner phone: ${form.owner_phone} — they can login with OTP`);
+        setForm({ owner_phone: '', owner_name: '', shop_name: '', shop_phone: '',
+          address_line: '', city: '', pincode: '', lat: '19.0760', lng: '72.8777',
+          delivery_radius_km: '5', min_order_amount: '100', commission_rate: '0.1' });
       }
-
-      // 2. Create shop
-      const { error } = await supabase.from('shops').insert({
-        owner_id: ownerId,
-        name: values.shop_name,
-        phone: values.shop_phone,
-        address_line: values.address_line,
-        city: values.city,
-        pincode: values.pincode,
-        lat: values.lat,
-        lng: values.lng,
-        delivery_radius_km: values.delivery_radius_km,
-        min_order_amount: values.min_order_amount,
-        commission_rate: values.commission_rate,
-        is_approved: true,
-      });
-
-      if (error) throw error;
-      toast.success('Shop created and approved!');
-      router.push('/admin/shops');
-    } catch (err) {
-      toast.error('Failed to create shop', String(err));
+    } catch (e: any) {
+      setError(e.message);
     }
-    setSaving(false);
-  }
+    setLoading(false);
+  };
+
+  const fields = [
+    { label: 'Owner Phone (+91...)', name: 'owner_phone', placeholder: '+919XXXXXXXXX' },
+    { label: 'Owner Name', name: 'owner_name', placeholder: 'Ravi Kumar' },
+    { label: 'Shop Name', name: 'shop_name', placeholder: 'Ravi Kirana Store' },
+    { label: 'Shop Phone', name: 'shop_phone', placeholder: '+919XXXXXXXXX' },
+    { label: 'Address', name: 'address_line', placeholder: '14 MG Road' },
+    { label: 'City', name: 'city', placeholder: 'Mumbai' },
+    { label: 'Pincode', name: 'pincode', placeholder: '400001' },
+    { label: 'Latitude', name: 'lat', placeholder: '19.0760' },
+    { label: 'Longitude', name: 'lng', placeholder: '72.8777' },
+    { label: 'Delivery Radius (km)', name: 'delivery_radius_km', placeholder: '5' },
+    { label: 'Min Order (₹)', name: 'min_order_amount', placeholder: '100' },
+    { label: 'Commission (0-1)', name: 'commission_rate', placeholder: '0.1' },
+  ];
 
   return (
-    <div className="p-4 lg:p-6 max-w-xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin/shops" className="p-2 rounded-xl hover:bg-gray-100">
-          <ArrowLeft size={20} className="text-gray-700" />
-        </Link>
-        <h1 className="text-xl font-black text-gray-900">Create Shop</h1>
+    <div className="p-6 max-w-2xl">
+      <h1 className="text-2xl font-bold mb-2">Create Shop</h1>
+      <p className="text-gray-400 text-sm mb-6">Creates shop owner account + shop in one step</p>
+
+      {error && <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl mb-4 text-sm">{error}</div>}
+      {success && <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl mb-4 text-sm">{success}</div>}
+
+      <div className="bg-white rounded-2xl border shadow-sm p-6 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {fields.map(f => (
+            <div key={f.name}>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">{f.label}</label>
+              <input name={f.name} value={(form as any)[f.name]} onChange={handle}
+                placeholder={f.placeholder}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+            </div>
+          ))}
+        </div>
+        <button onClick={submit} disabled={loading}
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold disabled:opacity-50 transition mt-2">
+          {loading ? 'Creating...' : 'Create Shop & Owner Account'}
+        </button>
       </div>
-
-      <Card className="p-5">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <h2 className="text-sm font-bold text-gray-700">Owner Details</h2>
-          <Input label="Owner Phone (+91...)" {...register('owner_phone')} error={errors.owner_phone?.message} />
-          <Input label="Owner Name" {...register('owner_name')} error={errors.owner_name?.message} />
-
-          <h2 className="text-sm font-bold text-gray-700 pt-2">Shop Details</h2>
-          <Input label="Shop Name" {...register('shop_name')} error={errors.shop_name?.message} />
-          <Input label="Shop Phone" {...register('shop_phone')} error={errors.shop_phone?.message} />
-          <Input label="Address" {...register('address_line')} error={errors.address_line?.message} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="City" {...register('city')} error={errors.city?.message} />
-            <Input label="Pincode" {...register('pincode')} error={errors.pincode?.message} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Latitude" type="number" step="any" {...register('lat')} />
-            <Input label="Longitude" type="number" step="any" {...register('lng')} />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Radius (km)" type="number" step="0.5" {...register('delivery_radius_km')} />
-            <Input label="Min Order (₹)" type="number" {...register('min_order_amount')} />
-            <Input label="Commission (0-1)" type="number" step="0.01" {...register('commission_rate')} />
-          </div>
-
-          <Button type="submit" variant="primary" className="w-full" isLoading={saving}>
-            Create Shop
-          </Button>
-        </form>
-      </Card>
     </div>
   );
 }
