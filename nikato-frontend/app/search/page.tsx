@@ -20,7 +20,7 @@ async function searchProducts(query: string): Promise<ProductWithShop[]> {
     .from('products')
     .select('*, shops!inner(id, name, is_approved, is_open)')
     .eq('is_available', true)
-    .eq('shops.is_approved', true)
+    
     .ilike('name', `%${query}%`)
     .limit(30);
 
