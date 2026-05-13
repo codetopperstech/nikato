@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 
 export default function ShopPage() {
-  const { id } = useParams();
+  const params = useParams(); const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const router = useRouter();
   const [shop, setShop] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
