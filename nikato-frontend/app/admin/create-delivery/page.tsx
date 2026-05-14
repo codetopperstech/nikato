@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
 
 export default function CreateDeliveryPage() {
   const [loading, setLoading] = useState(false);
@@ -14,27 +13,21 @@ export default function CreateDeliveryPage() {
   const submit = async () => {
     setLoading(true); setError(''); setSuccess('');
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-create-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({ phone: form.phone, role: 'delivery', full_name: form.full_name }),
-        }
-      );
+      // ✅ Next.js API route — no CORS, no edge fn issues
+      const res = await fetch('/api/admin/create-delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: form.phone, full_name: form.full_name }),
+      });
       const json = await res.json();
-      if (!res.ok || json.error) {
-        setError(json.error?.message || 'Failed to create delivery partner');
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to create delivery partner');
       } else {
         setSuccess(`✅ Delivery partner created! Phone: ${form.phone} — they can login with OTP`);
         setForm({ phone: '', full_name: '' });
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
     }
     setLoading(false);
   };
