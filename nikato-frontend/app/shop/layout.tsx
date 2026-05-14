@@ -1,20 +1,42 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
 import { Spinner } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/store/auth';
 import { useShopStore } from '@/store/shop';
 import { toast } from '@/store/ui';
 import type { Order, Shop } from '@/types';
+import type { User } from '@supabase/supabase-js';
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, role, isLoading: authLoading } = useAuthStore();
   const { setShop, setPendingOrders, addPendingOrder, shopData } = useShopStore();
+  const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // ✅ Directly fetch user + role from Supabase (don't rely on store)
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setAuthLoading(false); router.replace('/login'); return; }
+      setUser(user);
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      const r = profile?.role ?? null;
+      setRole(r);
+      setAuthLoading(false);
+      if (r !== 'shop_owner') router.replace('/unauthorized');
+    };
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session) { router.replace('/login'); }
+    });
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   // Fetch shop data
   const { isLoading: shopLoading } = useQuery({
@@ -32,7 +54,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
     enabled: !!user && role === 'shop_owner',
   });
 
-  // Fetch pending orders once shop is loaded
+  // Fetch pending orders
   useQuery({
     queryKey: ['pending-orders', shopData?.id],
     queryFn: async () => {
@@ -49,31 +71,20 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
     enabled: !!shopData?.id,
   });
 
-  // Realtime: new incoming orders
+  // Realtime: new orders
   useEffect(() => {
     if (!shopData?.id) return;
-
     const channel = supabase
       .channel(`shop-new-orders-${shopData.id}`)
-      .on(
-        'postgres_changes',
+      .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'orders', filter: `shop_id=eq.${shopData.id}` },
         (payload) => {
           addPendingOrder(payload.new as Order);
           toast.success('New order received!', `Order #${(payload.new as Order).order_number}`);
         }
-      )
-      .subscribe();
-
+      ).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [shopData?.id, addPendingOrder]);
-
-  // Auth guard
-  useEffect(() => {
-    if (!authLoading && (!user || role !== 'shop_owner')) {
-      router.replace('/unauthorized');
-    }
-  }, [authLoading, user, role, router]);
 
   if (authLoading || shopLoading) {
     return (
@@ -86,8 +97,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen bg-[#FAFAF8]">
       <ShopSidebar />
-      <main className="flex-1 min-w-0 pt-0 lg:pt-0">
-        {/* Mobile top padding to clear fixed header */}
+      <main className="flex-1 min-w-0">
         <div className="pt-14 lg:pt-0">
           {children}
         </div>
