@@ -6,20 +6,21 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const path = req.nextUrl.pathname
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => req.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options)
-          })
-        },
+  // Skip middleware if env vars not set (build time)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseKey) return res
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll: () => req.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          res.cookies.set(name, value, options)
+        })
       },
-    }
-  )
+    },
+  })
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -28,22 +29,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Get role from user metadata first (fast), fallback to DB
-  let role: string | null =
-    user.app_metadata?.user_role ||
-    user.app_metadata?.role ||
-    user.user_metadata?.role ||
-    null
+  // ✅ Always fetch role from profiles table (source of truth)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
 
-  // If not in metadata, fetch from DB (one query, cached by Supabase)
-  if (!role) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    role = data?.role ?? null
-  }
+  const role = profile?.role ?? 'customer'
 
   if (path.startsWith('/admin') && role !== 'admin') {
     return NextResponse.redirect(new URL('/unauthorized', req.url))

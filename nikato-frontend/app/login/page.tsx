@@ -22,7 +22,9 @@ export default function LoginPage() {
     setIsLoading(true); setError('');
     const { data, error } = await supabase.auth.verifyOtp({ phone, token: otp, type: 'sms' });
     if (error) { setError(error.message); setIsLoading(false); return; }
+
     if (data.user) {
+      // Fetch role and redirect
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
       const role = profile?.role;
       if (role === 'admin') router.push('/admin');

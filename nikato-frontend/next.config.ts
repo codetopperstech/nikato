@@ -1,6 +1,9 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
+  // Fix: monorepo workspace root detection warning
+  outputFileTracingRoot: path.join(__dirname, '../'),
   images: {
     remotePatterns: [
       {
@@ -10,7 +13,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Suppress Leaflet SSR warnings
   transpilePackages: [],
 };
 

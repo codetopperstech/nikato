@@ -1,11 +1,10 @@
 'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/store/auth';
 import { useDeliveryStore } from '@/store/delivery';
+import { useAuth } from '@/hooks/useAuth';
 import { OnlineToggle } from '@/components/delivery/OnlineToggle';
 import { ActiveDelivery } from '@/components/delivery/ActiveDelivery';
 import { EarningsSummary } from '@/components/delivery/EarningsSummary';
@@ -14,10 +13,9 @@ import { formatPrice, formatRelativeTime } from '@/lib/utils';
 import type { Order } from '@/types';
 
 export default function DeliveryHomePage() {
-  const { user, profile } = useAuthStore();
+  const { profile } = useAuth();
   const { isOnline, currentDelivery } = useDeliveryStore();
 
-  // Available orders (ready, no partner assigned)
   const { data: available = [], isLoading } = useQuery<Order[]>({
     queryKey: ['available-orders'],
     queryFn: async () => {
@@ -36,22 +34,13 @@ export default function DeliveryHomePage() {
 
   return (
     <div className="p-4 space-y-5 max-w-lg mx-auto">
-      {/* Greeting */}
       <div>
         <p className="text-xs text-gray-500">Welcome back</p>
         <h1 className="text-2xl font-black text-gray-900">{profile?.full_name ?? 'Delivery Partner'}</h1>
       </div>
-
-      {/* Online toggle */}
       <OnlineToggle />
-
-      {/* Active delivery */}
       {currentDelivery && <ActiveDelivery />}
-
-      {/* Earnings */}
       <EarningsSummary />
-
-      {/* Available orders */}
       {isOnline && !currentDelivery && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -63,23 +52,16 @@ export default function DeliveryHomePage() {
             </Link>
           </div>
           {isLoading ? (
-            <div className="space-y-2">
-              {[1, 2].map((i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}
-            </div>
+            <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} className="h-16 rounded-2xl" />)}</div>
           ) : available.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-2xl border border-gray-100">
-              No orders available nearby. Check back soon.
-            </p>
+            <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-2xl border border-gray-100">No orders available nearby.</p>
           ) : (
             <div className="space-y-2">
               {available.map((o) => {
                 const shop = (o as { shop?: { name: string } }).shop;
                 return (
-                  <Link
-                    key={o.id}
-                    href={`/delivery/orders/${o.id}`}
-                    className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-4 hover:border-[#FF6B35]/30"
-                  >
+                  <Link key={o.id} href={`/delivery/orders/${o.id}`}
+                    className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-4 hover:border-[#FF6B35]/30">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900">#{o.order_number}</p>
                       <p className="text-xs text-gray-500 truncate">{shop?.name} · {formatRelativeTime(o.created_at)}</p>

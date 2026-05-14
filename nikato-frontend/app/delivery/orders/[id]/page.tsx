@@ -6,8 +6,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Navigation } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/store/auth';
+
 import { useDeliveryStore } from '@/store/delivery';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/store/ui';
 import { PickupAction } from '@/components/delivery/PickupAction';
 import { DeliverAction } from '@/components/delivery/DeliverAction';
@@ -19,7 +20,8 @@ export default function DeliveryOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const qc = useQueryClient();
-  const { user } = useAuthStore();
+  
+  const { user } = useAuth();
   const { setCurrentDelivery } = useDeliveryStore();
   const [accepting, setAccepting] = useState(false);
 

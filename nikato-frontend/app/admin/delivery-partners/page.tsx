@@ -1,68 +1,66 @@
 'use client';
+import { useEffect, useState } from 'react';
 
-import { useQuery } from '@tanstack/react-query';
-import { DataTable, type Column } from '@/components/admin/DataTable';
-import { Badge, Skeleton } from '@/components/ui';
-import { formatPrice, formatRelativeTime } from '@/lib/utils';
-import type { Profile } from '@/types';
-
-type DPRow = Profile & {
-  location: { is_online: boolean; updated_at: string } | null;
+type Partner = {
+  id: string; full_name: string | null; phone: string | null;
+  role: string; created_at: string;
+  location: { is_online: boolean } | null;
   earnings: number;
 };
 
 export default function AdminDeliveryPartnersPage() {
-  const { data: partners = [], isLoading, error } = useQuery<DPRow[]>({
-    queryKey: ['admin-delivery-partners'],
-    queryFn: async () => {
-      const res = await fetch('/api/admin/delivery-partners');
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error ?? 'Failed to fetch delivery partners');
-      }
-      const json = await res.json();
-      return json.partners ?? [];
-    },
-    staleTime: 30000,
-    refetchInterval: 30000,
-  });
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const COLUMNS: Column<DPRow>[] = [
-    { key: 'full_name', label: 'Name', render: (r) => <span className="font-semibold">{r.full_name}</span> },
-    { key: 'phone', label: 'Phone' },
-    {
-      key: 'is_online',
-      label: 'Status',
-      render: (r) => (
-        <Badge variant={r.location?.is_online ? 'success' : 'default'}>
-          {r.location?.is_online ? 'Online' : 'Offline'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'earnings',
-      label: 'Total Earned',
-      render: (r) => <span className="font-bold text-green-600">{formatPrice(r.earnings)}</span>,
-    },
-    {
-      key: 'updated_at',
-      label: 'Last Active',
-      render: (r) => r.location ? formatRelativeTime(r.location.updated_at) : '—',
-    },
-  ];
+  useEffect(() => {
+    fetch('/api/admin/delivery-partners')
+      .then(r => r.json())
+      .then(d => { if (d.error) setError(d.error); else setPartners(d.partners ?? []); })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
-    <div className="p-4 lg:p-6 max-w-5xl">
-      <h1 className="text-2xl font-black text-gray-900 mb-4">Delivery Partners</h1>
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl mb-4 text-sm">
-          ⚠️ {(error as Error).message}
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Delivery Partners</h1>
+          <p className="text-gray-400 text-sm">{partners.length} total partners</p>
         </div>
-      )}
-      {isLoading ? (
-        <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+      </div>
+      {error && <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl mb-4 text-sm">⚠️ {error}</div>}
+      {loading ? (
+        <div className="text-center py-16 text-orange-500 animate-pulse">Loading...</div>
+      ) : partners.length === 0 ? (
+        <div className="bg-white rounded-2xl border p-8 text-center text-gray-400">
+          <div className="text-4xl mb-3">🛵</div>
+          <p>No delivery partners yet</p>
+        </div>
       ) : (
-        <DataTable columns={COLUMNS} data={partners} emptyText="No delivery partners found" />
+        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+          <div className="divide-y">
+            {partners.map(p => (
+              <div key={p.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-lg font-bold text-green-600">
+                    {p.full_name ? p.full_name[0].toUpperCase() : '?'}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">{p.full_name || 'No name'}</p>
+                    <p className="text-xs text-gray-400">{p.phone}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${p.location?.is_online ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {p.location?.is_online ? '● Online' : '● Offline'}
+                  </span>
+                  <span className="text-sm font-bold text-gray-700">₹{p.earnings.toFixed(0)} earned</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
