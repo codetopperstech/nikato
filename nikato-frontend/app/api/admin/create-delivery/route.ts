@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'phone and full_name are required' }, { status: 400 })
     }
 
-    // E.164 format check
     const e164 = /^\+[1-9]\d{6,14}$/
     if (!e164.test(phone)) {
       return NextResponse.json({ error: 'Invalid phone. Use format: +91XXXXXXXXXX' }, { status: 400 })
@@ -44,10 +43,17 @@ export async function POST(req: NextRequest) {
 
     const admin = getAdminClient()
 
-    // Check duplicate
-    const { data: existing } = await admin.from('profiles').select('id').eq('phone', phone).single()
+    // ✅ If already exists — return success instead of 409 error
+    const { data: existing } = await admin.from('profiles').select('id, phone, full_name, role').eq('phone', phone).single()
     if (existing) {
-      return NextResponse.json({ error: 'A user with this phone already exists' }, { status: 409 })
+      return NextResponse.json({
+        success: true,
+        already_existed: true,
+        user_id: existing.id,
+        phone,
+        full_name: existing.full_name,
+        message: 'Delivery partner already exists with this phone number'
+      }, { status: 200 })
     }
 
     // Create auth user
@@ -62,16 +68,8 @@ export async function POST(req: NextRequest) {
 
     const uid = newUser.user.id
 
-    // Upsert profile
     await admin.from('profiles').upsert({ id: uid, phone, full_name, role: 'delivery' })
-
-    // Create delivery_locations row
-    await admin.from('delivery_locations').upsert({
-      delivery_partner_id: uid,
-      lat: 0,
-      lng: 0,
-      is_online: false,
-    })
+    await admin.from('delivery_locations').upsert({ delivery_partner_id: uid, lat: 0, lng: 0, is_online: false })
 
     return NextResponse.json({ success: true, user_id: uid, phone, full_name }, { status: 201 })
   } catch (err: unknown) {
