@@ -1,14 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+// ✅ Lazy client — created inside handler, not at module level (avoids build crash)
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const supabaseAdmin = getAdminClient()
+
     const authHeader = req.headers.get('authorization')
     if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -39,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({ id: newUser.user.id, phone: owner_phone, name: owner_name, role: 'shop_owner' })
+      .upsert({ id: newUser.user.id, phone: owner_phone, full_name: owner_name, role: 'shop_owner' })
 
     if (profileError) {
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
@@ -52,13 +57,13 @@ export async function POST(req: NextRequest) {
         owner_id: newUser.user.id,
         name: shop_name,
         phone: shop_phone,
-        address, city, pincode,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        delivery_radius: parseFloat(delivery_radius),
-        min_order: parseFloat(min_order),
-        commission: parseFloat(commission),
-        approved: false
+        address_line: address,
+        city,
+        pincode,
+        lat: parseFloat(latitude),
+        lng: parseFloat(longitude),
+        delivery_radius_km: parseFloat(delivery_radius),
+        is_approved: false,
       })
       .select()
       .single()
