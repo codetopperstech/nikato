@@ -1,39 +1,28 @@
-// ============================================================
-// NIKATO — hooks/useNearbyShops.ts
-// Fetches nearby shops via nearby-shops Edge Function
-// Blueprint Section 07 & 06
-// ============================================================
-
 'use client';
-
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
 import type { Shop } from '@/types';
 
-const DEFAULT_RADIUS_KM = 5;
-
-async function fetchNearbyShops(lat: number, lng: number, radius_km = DEFAULT_RADIUS_KM): Promise<Shop[]> {
-  const { data, error } = await supabase.functions.invoke<{ shops: Shop[] }>(
-    'nearby-shops',
-    {
-      body: { lat, lng, radius_km },
-    }
-  );
-
-  if (error) throw error;
-  return data?.shops ?? [];
+async function fetchNearbyShops(lat: number, lng: number, radius_km = 5): Promise<Shop[]> {
+  const res = await fetch('/api/shops/nearby', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lat, lng, radius_km }),
+  });
+  if (!res.ok) throw new Error('Failed to fetch shops');
+  const data = await res.json();
+  return data.shops ?? [];
 }
 
 export function useNearbyShops(
   lat: number | null | undefined,
   lng: number | null | undefined,
-  radius_km = DEFAULT_RADIUS_KM
+  radius_km = 5
 ) {
   return useQuery({
     queryKey: ['nearby-shops', lat, lng, radius_km],
     queryFn: () => fetchNearbyShops(lat!, lng!, radius_km),
     enabled: lat != null && lng != null,
-    staleTime: 60 * 1000, // 60s stale-while-revalidate
+    staleTime: 60 * 1000,
     retry: 2,
   });
 }
