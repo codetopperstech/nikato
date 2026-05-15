@@ -43,7 +43,6 @@ export default function CheckoutPage() {
 
     setIsPlacing(true);
     try {
-      // ✅ Use Next.js API route — no CORS, no edge fn issues
       const res = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,24 +54,23 @@ export default function CheckoutPage() {
         }),
       });
       const data = await res.json();
+      if (!res.ok) { toast.error('Order failed', data.error ?? 'Something went wrong'); return; }
 
-      if (!res.ok) {
-        toast.error('Order failed', data.error ?? 'Something went wrong');
-        return;
-      }
-
-      if (paymentMethod === 'ONLINE' && data.razorpay_order_id) {
-        await initiatePayment(data.order_id, totalAmount());
+      if (paymentMethod === 'ONLINE' && data.razorpay_order_id && data.key_id) {
+        // ✅ Pass razorpay data directly — no extra edge fn call
+        await initiatePayment(data.order_id, data.razorpay_order_id, data.key_id, data.amount);
       } else {
         clearCart();
         router.push(`/orders/${data.order_id}`);
       }
-    } catch (e) {
+    } catch {
       toast.error('Something went wrong');
     } finally {
       setIsPlacing(false);
     }
   };
+
+  const total = totalAmount() + 30;
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] pb-32">
@@ -91,7 +89,7 @@ export default function CheckoutPage() {
         </section>
         <section>
           <h2 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-3">Special Instructions</h2>
-          <textarea value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} placeholder="E.g. No onions, extra napkins…" maxLength={500} rows={3} className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35] resize-none" />
+          <textarea value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} placeholder="E.g. No onions, ring doorbell…" maxLength={500} rows={3} className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35] resize-none" />
         </section>
         <section>
           <h2 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-3">Order Summary</h2>
@@ -101,7 +99,7 @@ export default function CheckoutPage() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4">
         <div className="max-w-lg mx-auto">
           <Button variant="primary" size="lg" className="w-full" onClick={placeOrder} isLoading={isPlacing || isProcessing} disabled={!selectedAddress} rightIcon={<ArrowRight size={16} />}>
-            {paymentMethod === 'COD' ? 'Place Order' : 'Proceed to Pay'} · ₹{(totalAmount() + 30).toFixed(0)}
+            {paymentMethod === 'COD' ? 'Place Order' : 'Proceed to Pay'} · ₹{total.toFixed(0)}
           </Button>
         </div>
       </div>

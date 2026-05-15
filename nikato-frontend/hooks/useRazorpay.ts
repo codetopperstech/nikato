@@ -1,74 +1,55 @@
-// ============================================================
-// NIKATO — hooks/useRazorpay.ts
-// Razorpay checkout hook — loads SDK and opens modal
-// Blueprint Section 14: Payment Flow
-// ============================================================
-
 'use client';
-
 import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/client';
 import { openRazorpayCheckout } from '@/lib/razorpay';
 import { useAuthStore } from '@/store/auth';
 import { toast } from '@/store/ui';
-import type {
-  PaymentInitResponse,
-  PaymentVerifyRequest,
-  PaymentVerifyResponse,
-} from '@/types';
 
 interface UseRazorpayOptions {
   onSuccess: (orderId: string) => void;
   onFailure?: (orderId: string) => void;
 }
 
+// Called with the full data from /api/orders/create response
 export function useRazorpay({ onSuccess, onFailure }: UseRazorpayOptions) {
   const { profile } = useAuthStore();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const initiatePayment = useCallback(
-    async (orderId: string, orderAmount: number) => {
+    async (
+      orderId: string,
+      razorpayOrderId: string,
+      keyId: string,
+      amountPaise: number
+    ) => {
       setIsProcessing(true);
       try {
-        // Step 1: Get Razorpay order ID from backend
-        const { data: initData, error: initError } =
-          await supabase.functions.invoke<PaymentInitResponse>('payment-init', {
-            body: { order_id: orderId },
-          });
-
-        if (initError || !initData) {
-          throw new Error('Failed to initiate payment');
-        }
-
-        // Step 2: Open Razorpay checkout
         await openRazorpayCheckout({
-          key: initData.key_id,
-          amount: Math.round(orderAmount * 100), // paise
+          key: keyId,
+          amount: amountPaise,
           currency: 'INR',
           name: 'NIKATO',
           description: 'Hyperlocal Delivery',
-          order_id: initData.razorpay_order_id,
+          order_id: razorpayOrderId,
           prefill: {
             name: profile?.full_name ?? '',
-            contact: profile?.phone ?? '',
-            email: profile?.email ?? '',
+            contact: (profile?.phone as string) ?? '',
+            email: (profile?.email as string) ?? '',
           },
           theme: { color: '#FF6B35' },
           handler: async (response) => {
-            // Step 3: Verify payment on backend
-            const { data: verifyData, error: verifyError } =
-              await supabase.functions.invoke<PaymentVerifyResponse>(
-                'payment-verify',
-                {
-                  body: {
-                    order_id: orderId,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature,
-                  } satisfies PaymentVerifyRequest,
-                }
-              );
-
-            if (verifyError || !verifyData?.success) {
+            // Verify payment via Next.js API route
+            const res = await fetch('/api/orders/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                order_id: orderId,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
               toast.error('Payment verification failed', 'Please contact support');
               onFailure?.(orderId);
             } else {
@@ -86,7 +67,7 @@ export function useRazorpay({ onSuccess, onFailure }: UseRazorpayOptions) {
         });
       } catch (err) {
         console.error('Razorpay error:', err);
-        toast.error('Payment failed', 'Please try again');
+        toast.error('Payment failed. Please try again.');
         setIsProcessing(false);
       }
     },
