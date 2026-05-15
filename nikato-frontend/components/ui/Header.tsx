@@ -9,22 +9,29 @@ export default function Header() {
   const [profile, setProfile] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [authReady, setAuthReady] = useState(false); // ✅ wait for auth check
   const router = useRouter();
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        const { data: p } = await supabase.from('profiles').select('full_name,role,avatar_url').eq('id', user.id).single();
+    const init = async (sessionUser: any) => {
+      if (sessionUser) {
+        setUser(sessionUser);
+        const { data: p } = await supabase.from('profiles').select('full_name,role,avatar_url').eq('id', sessionUser.id).single();
         setProfile(p);
-        const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false);
+        const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', sessionUser.id).eq('is_read', false);
         setUnread(count ?? 0);
+      } else {
+        setUser(null);
+        setProfile(null);
       }
+      setAuthReady(true);
     };
-    init();
+
+    // Check session immediately
+    supabase.auth.getSession().then(({ data: { session } }) => init(session?.user ?? null));
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) init(); else { setUser(null); setProfile(null); }
+      init(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -32,7 +39,7 @@ export default function Header() {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null); setProfile(null); setMenuOpen(false);
-    router.push('/login'); router.refresh();
+    router.push('/'); router.refresh();
   };
 
   const roleLink = profile?.role === 'admin' ? { href: '/admin', label: '⚙️ Admin Panel' }
@@ -44,7 +51,11 @@ export default function Header() {
       <Link href="/" className="text-xl font-bold">NIKATO</Link>
       <div className="flex items-center gap-2">
         <Link href="/shops" className="hidden sm:block text-sm bg-white text-orange-500 px-3 py-1.5 rounded-full font-semibold">Browse shops</Link>
-        {user ? (
+
+        {/* ✅ Only render auth buttons AFTER auth check completes */}
+        {!authReady ? (
+          <div className="w-16 h-8 bg-orange-400 rounded-full animate-pulse" />
+        ) : user ? (
           <div className="relative flex items-center gap-2">
             <Link href="/notifications" className="relative p-2 hover:bg-orange-600 rounded-full">
               🔔{unread > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{unread > 9 ? '9+' : unread}</span>}
