@@ -107,9 +107,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ order_id: order.id, order_number: orderNumber, razorpay_order_id: rzpOrder.id, key_id: keyId, amount: Math.round(totalAmount * 100), currency: 'INR' }, { status: 201 });
     }
 
-    // COD: advance to confirmed immediately + trigger delivery
-    await admin.from('orders').update({ status: 'confirmed', updated_at: new Date().toISOString() }).eq('id', order.id);
-    assignCodDelivery(admin, order.id).catch(console.error);
+    // COD: stays 'pending' — shop must manually accept/reject
     return NextResponse.json({ order_id: order.id, order_number: orderNumber, total_amount: totalAmount }, { status: 201 });
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 });
