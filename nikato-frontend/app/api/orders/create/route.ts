@@ -88,20 +88,23 @@ export async function POST(req: NextRequest) {
     if (payment_method === 'ONLINE') {
       const keyId = process.env.RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
-      if (keyId && keySecret) {
-        const credentials = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-        const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
-          method: 'POST',
-          headers: { 'Authorization': `Basic ${credentials}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: Math.round(totalAmount * 100), currency: 'INR', receipt: orderNumber }),
-        });
-        const rzpOrder = await rzpRes.json();
-        if (rzpOrder.id) {
-          await admin.from('orders').update({ razorpay_order_id: rzpOrder.id }).eq('id', order.id);
-          await admin.from('payments').insert({ order_id: order.id, razorpay_order_id: rzpOrder.id, amount: totalAmount, currency: 'INR', status: 'created' });
-          return NextResponse.json({ order_id: order.id, order_number: orderNumber, razorpay_order_id: rzpOrder.id, key_id: keyId, amount: Math.round(totalAmount * 100), currency: 'INR' }, { status: 201 });
-        }
+      // ✅ Hard fail if Razorpay not configured — don't silently fall to COD
+      if (!keyId || !keySecret) {
+        return NextResponse.json({ error: 'Payment gateway not configured. Please contact support or choose Cash on Delivery.' }, { status: 503 });
       }
+      const credentials = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+      const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${credentials}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Math.round(totalAmount * 100), currency: 'INR', receipt: orderNumber }),
+      });
+      const rzpOrder = await rzpRes.json();
+      if (!rzpOrder.id) {
+        return NextResponse.json({ error: `Razorpay error: ${rzpOrder.error?.description ?? 'Failed to create payment order'}` }, { status: 502 });
+      }
+      await admin.from('orders').update({ razorpay_order_id: rzpOrder.id }).eq('id', order.id);
+      await admin.from('payments').insert({ order_id: order.id, razorpay_order_id: rzpOrder.id, amount: totalAmount, currency: 'INR', status: 'created' });
+      return NextResponse.json({ order_id: order.id, order_number: orderNumber, razorpay_order_id: rzpOrder.id, key_id: keyId, amount: Math.round(totalAmount * 100), currency: 'INR' }, { status: 201 });
     }
 
     return NextResponse.json({ order_id: order.id, order_number: orderNumber, total_amount: totalAmount }, { status: 201 });
