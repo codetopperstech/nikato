@@ -1,9 +1,3 @@
-// ============================================================
-// NIKATO — lib/razorpay.ts
-// Razorpay script loader utility
-// Blueprint Section 14: Payment Flow
-// ============================================================
-
 declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
@@ -19,18 +13,10 @@ export interface RazorpayOptions {
   image?: string;
   order_id: string;
   handler: (response: RazorpaySuccessResponse) => void;
-  prefill?: {
-    name?: string;
-    email?: string;
-    contact?: string;
-  };
+  prefill?: { name?: string; email?: string; contact?: string };
   notes?: Record<string, string>;
-  theme?: {
-    color?: string;
-  };
-  modal?: {
-    ondismiss?: () => void;
-  };
+  theme?: { color?: string };
+  modal?: { ondismiss?: () => void };
 }
 
 export interface RazorpaySuccessResponse {
@@ -44,13 +30,10 @@ export interface RazorpayInstance {
   close(): void;
 }
 
-/** Dynamically loads the Razorpay checkout script */
 export function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
+    if (typeof window === 'undefined') return resolve(false);
+    if (window.Razorpay) return resolve(true);
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
@@ -60,12 +43,22 @@ export function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-/** Creates and opens a Razorpay checkout modal */
-export async function openRazorpayCheckout(
-  options: RazorpayOptions
-): Promise<void> {
-  const loaded = await loadRazorpayScript();
-  if (!loaded) throw new Error('Failed to load Razorpay SDK');
-  const rzp = new window.Razorpay(options);
-  rzp.open();
+/**
+ * Opens Razorpay modal and returns a Promise that resolves on success
+ * or rejects on dismiss/failure. This is the KEY fix — caller can await it.
+ */
+export function openRazorpayCheckout(options: Omit<RazorpayOptions, 'handler' | 'modal'>): Promise<RazorpaySuccessResponse> {
+  return new Promise(async (resolve, reject) => {
+    const loaded = await loadRazorpayScript();
+    if (!loaded) { reject(new Error('Failed to load Razorpay SDK')); return; }
+
+    const rzp = new window.Razorpay({
+      ...options,
+      handler: (response) => resolve(response),   // ✅ resolves promise on payment success
+      modal: {
+        ondismiss: () => reject(new Error('PAYMENT_CANCELLED')), // ✅ rejects on dismiss
+      },
+    });
+    rzp.open();
+  });
 }
