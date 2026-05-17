@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase/client';
 import { useShopStore } from '@/store/shop';
 import { toast } from '@/store/ui';
 import { Button, Input, Card } from '@/components/ui';
@@ -52,16 +51,16 @@ export default function ShopSettingsPage() {
   async function onSubmit(values: FormValues) {
     if (!shopData) return;
     setSaving(true);
-    const { data, error } = await supabase
-      .from('shops')
-      .update(values)
-      .eq('id', shopData.id)
-      .select('*')
-      .single();
-    if (error) {
-      toast.error('Failed to save settings', error.message);
+    const res = await fetch('/api/shop/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error('Failed to save settings', data.error ?? '');
     } else {
-      setShop(data);
+      setShop(data.shop);
       toast.success('Settings saved!');
     }
     setSaving(false);
