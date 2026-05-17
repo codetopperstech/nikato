@@ -50,11 +50,12 @@ export default function CheckoutPage() {
       router.push(`/orders/${orderId}`); // ✅ redirect to order page, let user retry
     }, [router]),
 
-    onDismiss: useCallback(() => {
-      // ✅ Payment cancelled — reset UI but keep order and cart
-      // User can retry by clicking "Proceed to Pay" again
-      setIsPlacing(false);
+    onDismiss: useCallback((_orderId: string) => {
+      // Order was cancelled in DB by useRazorpay — clear pending ref so next
+      // click creates a fresh order instead of retrying the cancelled one
+      pendingOrderRef.current = null;
       placeOrderInFlight.current = false;
+      setIsPlacing(false);
     }, []),
   });
 
