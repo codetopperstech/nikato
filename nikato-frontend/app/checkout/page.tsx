@@ -22,10 +22,13 @@ export default function CheckoutPage() {
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [isPlacing, setIsPlacing] = useState(false);
 
-  // ✅ Duplicate order prevention — ref persists across renders
-  const placeOrderInFlight = useRef(false);
-  // ✅ Track pending order for recovery after modal dismiss
-  const pendingOrderRef = useRef<{ orderId: string; razorpayOrderId: string; keyId: string; amount: number } | null>(null);
+  // Single ref to prevent double-clicks — reset in ALL paths
+  const inFlight = useRef(false);
+
+  const resetState = useCallback(() => {
+    inFlight.current = false;
+    setIsPlacing(false);
+  }, []);
 
   const { data: addresses = [], isLoading: addrLoading } = useQuery({
     queryKey: ['addresses', user?.id],
@@ -40,48 +43,29 @@ export default function CheckoutPage() {
 
   const { initiatePayment, isProcessing } = useRazorpay({
     onSuccess: useCallback((orderId: string) => {
-      pendingOrderRef.current = null;
+      // Don't reset — navigate away
       clearCart();
-      router.replace(`/orders/${orderId}`); // ✅ replace not push — prevent back to checkout
+      router.replace(`/orders/${orderId}`);
     }, [clearCart, router]),
 
     onFailure: useCallback((orderId: string) => {
-      pendingOrderRef.current = null;
-      router.push(`/orders/${orderId}`); // ✅ redirect to order page, let user retry
-    }, [router]),
+      resetState();
+      router.push(`/orders/${orderId}`);
+    }, [resetState, router]),
 
     onDismiss: useCallback((_orderId: string) => {
-      // Order was cancelled in DB by useRazorpay — clear pending ref so next
-      // click creates a fresh order instead of retrying the cancelled one
-      pendingOrderRef.current = null;
-      placeOrderInFlight.current = false;
-      setIsPlacing(false);
-    }, []),
+      // User closed modal — reset so they can try again
+      resetState();
+    }, [resetState]),
   });
 
   const placeOrder = useCallback(async () => {
-    // ✅ Hard guard against double-click or double-call
-    if (placeOrderInFlight.current) return;
+    if (inFlight.current) return; // prevent double-click
     if (!selectedAddress) { toast.error('Select a delivery address'); return; }
     if (!shopId || !items.length) { toast.error('Cart is empty'); return; }
     if (!user) { router.push('/login'); return; }
 
-    // ✅ If there's a pending order (user dismissed Razorpay and clicked again)
-    // retry payment instead of creating a new order
-    if (pendingOrderRef.current && paymentMethod === 'ONLINE') {
-      const { orderId, razorpayOrderId, keyId, amount } = pendingOrderRef.current;
-      placeOrderInFlight.current = true;
-      setIsPlacing(true);
-      try {
-        await initiatePayment(orderId, razorpayOrderId, keyId, amount);
-      } finally {
-        placeOrderInFlight.current = false;
-        setIsPlacing(false);
-      }
-      return;
-    }
-
-    placeOrderInFlight.current = true;
+    inFlight.current = true;
     setIsPlacing(true);
 
     try {
@@ -97,40 +81,27 @@ export default function CheckoutPage() {
       });
 
       const data = await res.json();
+
       if (!res.ok) {
-        toast.error('Order failed', data.error ?? 'Something went wrong');
-        placeOrderInFlight.current = false;
-        setIsPlacing(false);
+        toast.error(data.error ?? 'Order failed');
+        resetState();
         return;
       }
 
       if (paymentMethod === 'ONLINE' && data.razorpay_order_id && data.key_id) {
-        // ✅ Store pending order — so dismiss + retry works without creating duplicate
-        pendingOrderRef.current = {
-          orderId: data.order_id,
-          razorpayOrderId: data.razorpay_order_id,
-          keyId: data.key_id,
-          amount: data.amount,
-        };
-        // ✅ initiatePayment now properly awaits the Razorpay flow end-to-end
+        // initiatePayment handles onSuccess/onFailure/onDismiss — each resets state
         await initiatePayment(data.order_id, data.razorpay_order_id, data.key_id, data.amount);
-        // onSuccess/onFailure/onDismiss handle state from here
       } else {
-        // COD — clear cart and redirect immediately
+        // COD
         clearCart();
         router.replace(`/orders/${data.order_id}`);
       }
     } catch {
       toast.error('Something went wrong. Please try again.');
-      placeOrderInFlight.current = false;
-      setIsPlacing(false);
+      resetState();
     }
-  }, [
-    selectedAddress, shopId, items, user, paymentMethod,
-    specialInstructions, initiatePayment, clearCart, router,
-  ]);
+  }, [selectedAddress, shopId, items, user, paymentMethod, specialInstructions, initiatePayment, clearCart, router, resetState]);
 
-  const isButtonDisabled = !selectedAddress || isPlacing || isProcessing;
   const isButtonLoading = isPlacing || isProcessing;
   const total = totalAmount() + 30;
 
@@ -192,7 +163,7 @@ export default function CheckoutPage() {
             className="w-full"
             onClick={placeOrder}
             isLoading={isButtonLoading}
-            disabled={isButtonDisabled}
+            disabled={isButtonLoading || !selectedAddress}
             rightIcon={<ArrowRight size={16} />}
           >
             {isProcessing
@@ -203,8 +174,6 @@ export default function CheckoutPage() {
               ? 'Placing order…'
               : paymentMethod === 'COD'
               ? `Place Order · ₹${total.toFixed(0)}`
-              : pendingOrderRef.current
-              ? `Retry Payment · ₹${total.toFixed(0)}`
               : `Proceed to Pay · ₹${total.toFixed(0)}`}
           </Button>
         </div>
