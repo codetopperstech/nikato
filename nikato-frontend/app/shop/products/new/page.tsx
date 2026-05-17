@@ -1,11 +1,9 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 import { useShopStore } from '@/store/shop';
 import { toast } from '@/store/ui';
 import { ProductForm, type ProductFormValues } from '@/components/shop/ProductForm';
@@ -14,30 +12,33 @@ import type { Category } from '@/types';
 export default function NewProductPage() {
   const router = useRouter();
   const { shopData } = useShopStore();
+  const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['shop-categories', shopData?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('categories').select('*').eq('shop_id', shopData!.id).order('sort_order');
-      return (data ?? []) as Category[];
+      const res = await fetch('/api/shop/categories');
+      if (!res.ok) return [];
+      const d = await res.json();
+      return d.categories as Category[];
     },
     enabled: !!shopData?.id,
   });
 
   async function handleSubmit(values: ProductFormValues) {
-    if (!shopData) return;
     setSaving(true);
-    const { error } = await supabase.from('products').insert({
-      ...values,
-      shop_id: shopData.id,
-      category_id: values.category_id || null,
-      mrp: values.mrp || null,
+    const res = await fetch('/api/shop/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...values, category_id: values.category_id || null, mrp: values.mrp || null }),
     });
-    if (error) {
-      toast.error('Failed to create product', error.message);
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error('Failed to create product', data.error ?? '');
     } else {
       toast.success('Product added!');
+      qc.invalidateQueries({ queryKey: ['shop-products-list', shopData?.id] });
       router.push('/shop/products');
     }
     setSaving(false);

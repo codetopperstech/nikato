@@ -3,11 +3,20 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ChevronRight, RefreshCw } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 import { useShopStore } from '@/store/shop';
 import { Badge, Skeleton, EmptyState } from '@/components/ui';
 import { formatPrice, formatRelativeTime } from '@/lib/utils';
-import type { Order, OrderStatus } from '@/types';
+import type { OrderStatus } from '@/types';
+
+type OrderRow = {
+  id: string;
+  order_number: string;
+  status: OrderStatus;
+  total_amount: number;
+  payment_method: string;
+  created_at: string;
+  customer: { full_name: string | null; phone: string | null } | null;
+};
 
 const TABS: { label: string; statuses: OrderStatus[] }[] = [
   { label: 'Pending', statuses: ['pending'] },
@@ -26,16 +35,17 @@ export default function ShopOrdersPage() {
   const { shopData } = useShopStore();
   const [tab, setTab] = useState(0);
 
-  const { data: orders = [], isLoading, refetch, isFetching } = useQuery<Order[]>({
+  const { data: orders = [], isLoading, refetch, isFetching } = useQuery<OrderRow[]>({
     queryKey: ['shop-orders', shopData?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('orders').select('*').eq('shop_id', shopData!.id).order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Order[];
+      const res = await fetch('/api/shop/orders');
+      if (!res.ok) throw new Error('Failed to load');
+      const d = await res.json();
+      return d.orders as OrderRow[];
     },
     enabled: !!shopData?.id,
     staleTime: 15000,
-    refetchInterval: 20000, // ✅ periodic refetch
+    refetchInterval: 20000,
   });
 
   const filtered = orders.filter((o) => TABS[tab].statuses.includes(o.status));
@@ -62,7 +72,7 @@ export default function ShopOrdersPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}</div>
+        <div className="space-y-3">{[1,2,3].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>
       ) : filtered.length === 0 ? (
         <EmptyState title="No orders" description={`No ${TABS[tab].label.toLowerCase()} orders`} />
       ) : (
@@ -73,12 +83,19 @@ export default function ShopOrdersPage() {
               <Link key={order.id} href={`/shop/orders/${order.id}`}
                 className="flex items-center gap-3 bg-white rounded-2xl p-4 border border-gray-100 hover:border-[#FF6B35]/30 transition-colors">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="font-bold text-gray-900 text-sm">#{order.order_number}</span>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_COLOR[order.status]}`}>{order.status.replace('_', ' ')}</span>
-                    {order.status === 'pending' && ageMin >= 10 && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">⚠️{ageMin}m</span>}
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_COLOR[order.status]}`}>
+                      {order.status.replace('_', ' ')}
+                    </span>
+                    {order.status === 'pending' && ageMin >= 10 &&
+                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">⚠️ {ageMin}m</span>}
                   </div>
-                  <p className="text-xs text-gray-500">{formatPrice(order.total_amount)} · {formatRelativeTime(order.created_at)}</p>
+                  {/* ✅ Customer name */}
+                  <p className="text-xs font-medium text-gray-700 mb-0.5">
+                    {order.customer?.full_name ?? 'Customer'} · {order.payment_method}
+                  </p>
+                  <p className="text-xs text-gray-400">{formatPrice(order.total_amount)} · {formatRelativeTime(order.created_at)}</p>
                 </div>
                 <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
               </Link>
