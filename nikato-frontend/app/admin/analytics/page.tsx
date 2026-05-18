@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
 import { StatCard } from '@/components/admin/StatCard';
 import { RevenueChart } from '@/components/shop/RevenueChart';
 import { Skeleton } from '@/components/ui';
@@ -17,36 +16,9 @@ export default function AdminAnalyticsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-analytics', period],
     queryFn: async () => {
-      const from = new Date();
-      from.setDate(from.getDate() - period + 1);
-      from.setHours(0, 0, 0, 0);
-
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('total_amount, commission_amount, delivery_earning, created_at, status')
-        .gte('created_at', from.toISOString());
-
-      const delivered = (orders ?? []).filter((o) => o.status === 'delivered');
-      const gmv = delivered.reduce((s, o) => s + o.total_amount, 0);
-      const commission = delivered.reduce((s, o) => s + o.commission_amount, 0);
-      const deliveryEarnings = delivered.reduce((s, o) => s + o.delivery_earning, 0);
-
-      // Daily revenue chart
-      const dayMap: Record<string, number> = {};
-      for (let i = 0; i < period; i++) {
-        const d = new Date(from);
-        d.setDate(d.getDate() + i);
-        dayMap[d.toISOString().split('T')[0]] = 0;
-      }
-      delivered.forEach((o) => {
-        const key = o.created_at.split('T')[0];
-        if (dayMap[key] !== undefined) dayMap[key] += o.total_amount;
-      });
-      const chartData = Object.entries(dayMap).map(([date, revenue]) => ({ date, revenue }));
-
-      const avgOrderValue = delivered.length > 0 ? gmv / delivered.length : 0;
-
-      return { gmv, commission, deliveryEarnings, totalOrders: (orders ?? []).length, deliveredOrders: delivered.length, avgOrderValue, chartData };
+      const res = await fetch(`/api/admin/analytics?period=${period}`);
+      if (!res.ok) throw new Error('Failed to load');
+      return res.json();
     },
     staleTime: 60000,
   });
