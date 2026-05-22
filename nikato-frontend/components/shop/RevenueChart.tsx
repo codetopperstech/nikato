@@ -28,7 +28,7 @@ export function RevenueChart({ data, height = 140 }: RevenueChartProps) {
               </div>
               {/* Bar */}
               <div
-                className="w-full rounded-t-md bg-[#FF6B35] transition-all"
+                className="w-full rounded-t-md bg-[#7ED957] transition-all"
                 style={{ height: `${Math.max(pct, 2)}%` }}
               />
             </div>

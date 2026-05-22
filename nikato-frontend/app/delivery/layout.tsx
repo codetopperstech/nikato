@@ -1,6 +1,6 @@
 'use client';
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeliveryNav } from '@/components/delivery/DeliveryNav';
 import { Spinner } from '@/components/ui';
 import { supabase } from '@/lib/supabase/client';
@@ -12,7 +12,6 @@ import type { Order } from '@/types';
 export default function DeliveryLayout({ children }: { children: React.ReactNode }) {
   const { user, role, loading } = useAuth('delivery');
   const { isOnline, setEarnings, setCurrentDelivery } = useDeliveryStore();
-
   useLocationBroadcast(isOnline);
 
   useQuery({
@@ -22,13 +21,9 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const weekStart = new Date(now.getTime() - 7 * 86400000).toISOString();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { data } = await supabase
-        .from('orders')
-        .select('delivery_earning, created_at')
-        .eq('delivery_partner_id', user!.id)
-        .eq('status', 'delivered');
+      const { data } = await supabase.from('orders').select('delivery_earning,created_at').eq('delivery_partner_id', user!.id).eq('status', 'delivered');
       const rows = (data ?? []) as { delivery_earning: number; created_at: string }[];
-      const sum = (from: string) => rows.filter((r) => r.created_at >= from).reduce((acc, r) => acc + (r.delivery_earning ?? 0), 0);
+      const sum = (from: string) => rows.filter(r => r.created_at >= from).reduce((acc, r) => acc + (r.delivery_earning ?? 0), 0);
       setEarnings({ today: sum(todayStart), week: sum(weekStart), month: sum(monthStart) });
       return data;
     },
@@ -39,12 +34,7 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   useQuery({
     queryKey: ['active-delivery', user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*, shop:shops(*), address:addresses(*), order_items(*, product:products(name, image_url))')
-        .eq('delivery_partner_id', user!.id)
-        .eq('status', 'picked_up')
-        .maybeSingle();
+      const { data } = await supabase.from('orders').select('*,shop:shops(*),address:addresses(*),order_items(*,product:products(name,image_url))').eq('delivery_partner_id', user!.id).eq('status', 'picked_up').maybeSingle();
       setCurrentDelivery((data as Order | null) ?? null);
       return data;
     },
@@ -53,25 +43,21 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
-      .channel(`delivery-order-${user.id}`)
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `delivery_partner_id=eq.${user.id}` },
+    const channel = supabase.channel(`delivery-order-${user.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `delivery_partner_id=eq.${user.id}` },
         (payload) => setCurrentDelivery(payload.new as Order)
       ).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, setCurrentDelivery]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
-        <Spinner size="lg" className="text-[#FF6B35]" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#F9FBF8' }}>
+      <Spinner size="lg" style={{ color: '#7ED957' } as React.CSSProperties} />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] pb-20">
+    <div className="min-h-screen pb-20" style={{ background: '#F9FBF8' }}>
       {children}
       <DeliveryNav />
     </div>

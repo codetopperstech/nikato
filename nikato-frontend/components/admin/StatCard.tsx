@@ -9,7 +9,7 @@ interface StatCardProps {
   color?: string;
 }
 
-export function StatCard({ label, value, subValue, icon, color = 'bg-[#FF6B35]' }: StatCardProps) {
+export function StatCard({ label, value, subValue, icon, color = 'bg-[#7ED957]' }: StatCardProps) {
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between">

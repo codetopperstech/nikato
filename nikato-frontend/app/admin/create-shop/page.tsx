@@ -83,7 +83,7 @@ export default function CreateShopPage() {
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+        className="mt-6 w-full bg-brand hover:bg-brand-dark text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
       >
         {loading ? 'Creating...' : 'Create Shop & Owner Account'}
       </button>

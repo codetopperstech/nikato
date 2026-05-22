@@ -1,130 +1,112 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { User, MapPin, Bell, LogOut, ChevronRight, ArrowLeft } from 'lucide-react';
+import { User, MapPin, Bell, LogOut, ChevronRight, Edit3, Check, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useAuthStore } from '@/store/auth';
-import { profileUpdateSchema, type ProfileUpdateFormData } from '@/lib/validations';
-import { Button, Input, Card } from '@/components/ui';
 import { toast } from '@/store/ui';
-import { getInitials } from '@/lib/utils';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { profile, setProfile, reset } = useAuthStore();
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [name, setName] = useState(profile?.full_name ?? '');
+  const [email, setEmail] = useState((profile?.email as string) ?? '');
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ProfileUpdateFormData>({
-    resolver: zodResolver(profileUpdateSchema),
-    defaultValues: { full_name: profile?.full_name ?? '', email: profile?.email ?? '' },
-  });
-
-  const onSave = async (data: ProfileUpdateFormData) => {
-    if (!profile) return;
-    setIsSaving(true);
-    const { data: updated, error } = await supabase
-      .from('profiles')
-      .update({ full_name: data.full_name, email: data.email || null })
-      .eq('id', profile.id)
-      .select()
-      .single();
-    if (error) { toast.error('Failed to update profile'); }
-    else { setProfile(updated as typeof profile); toast.success('Profile updated'); setIsEditing(false); }
-    setIsSaving(false);
+  const save = async () => {
+    setSaving(true);
+    const { data, error } = await supabase.from('profiles')
+      .update({ full_name: name.trim(), email: email.trim() || null })
+      .eq('id', profile!.id).select('*').single();
+    if (error) { toast.error('Failed to save'); }
+    else { setProfile(data as any); setEditing(false); toast.success('Profile updated'); }
+    setSaving(false);
   };
 
-  const handleLogout = async () => {
+  const logout = async () => {
     await supabase.auth.signOut();
     reset();
-    router.replace('/login');
+    router.push('/');
   };
 
-  const menuItems = [
-    { icon: MapPin, label: 'Saved Addresses', href: '/profile/addresses' },
-    { icon: Bell, label: 'Notifications', href: '/notifications' },
-  ];
+  const initials = profile?.full_name
+    ? profile.full_name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
-        <Link href="/" className="p-2 rounded-xl hover:bg-gray-100">
-          <ArrowLeft size={20} className="text-gray-700" />
-        </Link>
-        <h1 className="text-lg font-black text-gray-900">My Profile</h1>
+    <div className="min-h-screen pb-10" style={{ background: '#F9FBF8' }}>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+        <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-surface-2 transition-colors">
+          <ChevronRight size={20} className="text-gray-700 rotate-180" />
+        </button>
+        <h1 className="text-base font-black text-gray-900 flex-1">My Profile</h1>
+        {!editing && (
+          <button onClick={() => setEditing(true)} className="p-2 rounded-xl hover:bg-surface-2 transition-colors">
+            <Edit3 size={18} className="text-gray-500" />
+          </button>
+        )}
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
-        {/* Avatar */}
-        <div className="flex flex-col items-center py-6">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF6B35] to-[#FFB347] flex items-center justify-center text-white text-2xl font-black shadow-lg">
-            {profile?.full_name ? getInitials(profile.full_name) : <User size={32} />}
+      <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
+        {/* Avatar + name */}
+        <div className="bg-white rounded-3xl border border-gray-100 p-6 text-center shadow-card">
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-black text-white" style={{ background: 'linear-gradient(135deg, #7ED957, #5cb83a)' }}>
+            {initials}
           </div>
-          <h2 className="text-xl font-black text-gray-900 mt-3">{profile?.full_name || 'User'}</h2>
-          <p className="text-sm text-gray-500">{profile?.phone}</p>
-        </div>
-
-        {/* Edit form */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-black text-gray-900">Personal Info</h3>
-            {!isEditing && (
-              <button onClick={() => setIsEditing(true)} className="text-xs text-[#FF6B35] font-semibold">Edit</button>
-            )}
-          </div>
-          {isEditing ? (
-            <form onSubmit={handleSubmit(onSave)} className="space-y-4">
-              <Input label="Full Name" error={errors.full_name?.message} {...register('full_name')} />
-              <Input label="Email (optional)" type="email" error={errors.email?.message} {...register('email')} />
+          {editing ? (
+            <div className="space-y-3">
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name"
+                className="w-full text-center border-[1.5px] border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-brand focus:ring-2 focus:ring-brand/15" />
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email (optional)" type="email"
+                className="w-full text-center border-[1.5px] border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15" />
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} type="button" className="flex-1">Cancel</Button>
-                <Button variant="primary" size="sm" isLoading={isSaving} type="submit" className="flex-1">Save</Button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Name</span>
-                <span className="font-medium text-gray-900">{profile?.full_name || '—'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Phone</span>
-                <span className="font-medium text-gray-900">{profile?.phone}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Email</span>
-                <span className="font-medium text-gray-900">{profile?.email || '—'}</span>
+                <button onClick={() => setEditing(false)} className="flex-1 py-2.5 rounded-xl border-[1.5px] border-gray-200 text-sm font-semibold text-gray-600 flex items-center justify-center gap-1">
+                  <X size={14} /> Cancel
+                </button>
+                <button onClick={save} disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1 disabled:opacity-60" style={{ background: '#7ED957' }}>
+                  {saving ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <><Check size={14} /> Save</>}
+                </button>
               </div>
             </div>
+          ) : (
+            <>
+              <h2 className="text-xl font-black text-gray-900">{profile?.full_name || 'No name set'}</h2>
+              <p className="text-sm text-gray-400 mt-1">{profile?.phone}</p>
+              {profile?.email && <p className="text-xs text-gray-400">{profile.email as string}</p>}
+              <span className="inline-block mt-2 text-xs font-semibold px-3 py-1 rounded-full capitalize" style={{ background: '#edfbdc', color: '#3a7a1f' }}>{profile?.role ?? 'customer'}</span>
+            </>
           )}
-        </Card>
+        </div>
 
-        {/* Menu */}
-        <Card>
-          {menuItems.map((item, i) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors ${i > 0 ? 'border-t border-gray-100' : ''}`}
-            >
-              <item.icon size={18} className="text-gray-500" />
-              <span className="flex-1 text-sm font-medium text-gray-900">{item.label}</span>
-              <ChevronRight size={16} className="text-gray-400" />
+        {/* Menu links */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+          {[
+            { href: '/profile/addresses', icon: MapPin, label: 'Saved Addresses', sub: 'Manage delivery locations' },
+            { href: '/notifications', icon: Bell, label: 'Notifications', sub: 'Order updates & alerts' },
+            { href: '/orders', icon: ChevronRight, label: 'My Orders', sub: 'Track and reorder' },
+          ].map(({ href, icon: Icon, label, sub }) => (
+            <Link key={href} href={href} className="flex items-center gap-3 px-4 py-4 hover:bg-surface-2 transition-colors border-b border-gray-50 last:border-0">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#edfbdc' }}>
+                <Icon size={16} style={{ color: '#5cb83a' }} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">{label}</p>
+                <p className="text-xs text-gray-400">{sub}</p>
+              </div>
+              <ChevronRight size={16} className="text-gray-300" />
             </Link>
           ))}
-        </Card>
+        </div>
 
         {/* Logout */}
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-red-100 text-red-500 font-semibold text-sm hover:bg-red-50 transition-colors"
-        >
-          <LogOut size={16} />
-          Sign Out
+        <button onClick={logout} className="w-full bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-card hover:bg-red-50 transition-colors">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-red-50">
+            <LogOut size={16} className="text-red-500" />
+          </div>
+          <span className="text-sm font-semibold text-red-500">Sign Out</span>
         </button>
       </div>
     </div>

@@ -50,7 +50,7 @@ export default function AdminAnalyticsPage() {
       ) : data ? (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard label="Gross GMV" value={formatPrice(data.gmv)} icon={<TrendingUp size={18} />} color="bg-[#FF6B35]" />
+            <StatCard label="Gross GMV" value={formatPrice(data.gmv)} icon={<TrendingUp size={18} />} color="bg-[#7ED957]" />
             <StatCard label="Platform Commission" value={formatPrice(data.commission)} icon={<Store size={18} />} color="bg-purple-500" />
             <StatCard label="Orders" value={data.totalOrders} subValue={`${data.deliveredOrders} delivered`} icon={<ShoppingBag size={18} />} color="bg-blue-500" />
             <StatCard label="Avg Order Value" value={formatPrice(data.avgOrderValue)} icon={<Bike size={18} />} color="bg-green-500" />

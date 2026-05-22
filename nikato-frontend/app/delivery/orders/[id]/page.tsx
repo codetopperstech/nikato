@@ -102,7 +102,7 @@ export default function DeliveryOrderDetailPage() {
           <p className="text-sm text-gray-500">{order.shop.address_line}</p>
           {order.shop.lat && (
             <a href={`https://maps.google.com/?q=${order.shop.lat},${order.shop.lng}`} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1 text-[#FF6B35] text-sm mt-2 font-semibold">
+              className="flex items-center gap-1 text-[#7ED957] text-sm mt-2 font-semibold">
               <Navigation size={14} /> Open in Maps
             </a>
           )}
@@ -116,7 +116,7 @@ export default function DeliveryOrderDetailPage() {
           <div className="flex gap-3 mt-2">
             {order.address.lat && (
               <a href={`https://maps.google.com/?q=${order.address.lat},${order.address.lng}`} target="_blank" rel="noreferrer"
-                className="flex items-center gap-1 text-[#FF6B35] text-sm font-semibold">
+                className="flex items-center gap-1 text-[#7ED957] text-sm font-semibold">
                 <MapPin size={14} /> Maps
               </a>
             )}

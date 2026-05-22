@@ -1,75 +1,46 @@
 'use client';
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShoppingBag, TrendingUp, Clock, Wifi, WifiOff } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Wifi, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useShopStore } from '@/store/shop';
 import { OpenCloseToggle } from '@/components/shop/OpenCloseToggle';
 import { OrderQueue } from '@/components/shop/OrderQueue';
-import { Card, Skeleton } from '@/components/ui';
+import { Skeleton } from '@/components/ui';
 import { formatPrice } from '@/lib/utils';
 
 interface DayStat { orders: number; revenue: number; pending: number }
-
-function StatCard({ icon: Icon, label, value, sub, color }: {
-  icon: React.ElementType; label: string; value: string; sub?: string; color: string;
-}) {
-  return (
-    <Card className="p-4 flex items-center gap-3">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-        <Icon size={18} className="text-white" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500 font-medium truncate">{label}</p>
-        <p className="text-xl font-black text-gray-900">{value}</p>
-        {sub && <p className="text-xs text-gray-400">{sub}</p>}
-      </div>
-    </Card>
-  );
-}
 
 export default function ShopDashboard() {
   const { shopData, pendingOrders, isOpen } = useShopStore();
   const qc = useQueryClient();
 
-  const { data: stats, isLoading, dataUpdatedAt } = useQuery<DayStat>({
+  const { data: stats, isLoading, dataUpdatedAt, refetch, isFetching } = useQuery<DayStat>({
     queryKey: ['shop-today-stats', shopData?.id],
     queryFn: async () => {
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const { data } = await supabase
-        .from('orders')
-        .select('total_amount, shop_earning, status')
-        .eq('shop_id', shopData!.id)
-        .gte('created_at', today.toISOString());
-      const rows = data ?? [];
-      const active = rows.filter(r => !['cancelled', 'rejected'].includes(r.status));
-      return {
-        orders: active.length,
-        revenue: active.reduce((s, r) => s + Number(r.shop_earning ?? 0), 0),
-        pending: rows.filter(r => r.status === 'pending').length,
-      };
+      const res = await fetch('/api/shop/stats');
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
     },
     enabled: !!shopData?.id,
     staleTime: 20000,
-    refetchInterval: 30000, // ✅ periodic refresh
+    refetchInterval: 30000,
   });
 
-  const lastUpdated = dataUpdatedAt
-    ? new Date(dataUpdatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-    : null;
+  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : null;
 
   return (
-    <div className="p-4 lg:p-6 space-y-5 max-w-2xl">
+    <div className="p-4 lg:p-6 max-w-2xl space-y-5">
+      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-black text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5 truncate max-w-xs">{shopData?.name}</p>
+          <p className="text-sm text-gray-400 mt-0.5 truncate max-w-[200px]">{shopData?.name}</p>
         </div>
-        {lastUpdated && (
-          <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-            <Wifi size={11} /> {lastUpdated}
-          </span>
-        )}
+        <button onClick={() => refetch()} disabled={isFetching} className="flex items-center gap-1.5 text-xs text-gray-400 p-2 rounded-xl hover:bg-surface-2 transition-colors">
+          <RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} />
+          {lastUpdated && <span>{lastUpdated}</span>}
+        </button>
       </div>
 
       {/* Open/Close toggle */}
@@ -77,31 +48,38 @@ export default function ShopDashboard() {
 
       {/* Stats */}
       <div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Today</h2>
+        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Today's Summary</h2>
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}
-          </div>
+          <div className="grid grid-cols-2 gap-3"><Skeleton className="h-24 rounded-2xl" /><Skeleton className="h-24 rounded-2xl" /></div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <StatCard icon={ShoppingBag} label="Orders" value={String(stats?.orders ?? 0)}
-              sub={stats?.pending ? `${stats.pending} pending` : undefined} color="bg-[#FF6B35]" />
-            <StatCard icon={TrendingUp} label="Your Earnings"
-              value={formatPrice(stats?.revenue ?? 0)} color="bg-blue-500" />
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-card">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: '#edfbdc' }}>
+                <ShoppingBag size={18} style={{ color: '#5cb83a' }} />
+              </div>
+              <p className="text-2xl font-black text-gray-900">{stats?.orders ?? 0}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Orders</p>
+              {(stats?.pending ?? 0) > 0 && <span className="text-xs font-semibold px-2 py-0.5 rounded-full mt-1.5 inline-block" style={{ background: '#fff7ed', color: '#c2570a' }}>{stats!.pending} pending</span>}
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-card">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: '#e8f6ff' }}>
+                <TrendingUp size={18} style={{ color: '#0284c7' }} />
+              </div>
+              <p className="text-2xl font-black text-gray-900">{formatPrice(stats?.revenue ?? 0)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Your Earnings</p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Pending queue */}
+      {/* Pending orders */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-            {pendingOrders.length > 0 && <span className="w-2 h-2 rounded-full bg-[#FF6B35] animate-pulse" />}
+            {pendingOrders.length > 0 && <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#7ED957' }} />}
             Pending Orders ({pendingOrders.length})
           </h2>
-          {!isOpen && (
-            <span className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Shop closed</span>
-          )}
+          {!isOpen && <span className="text-xs font-semibold text-red-400 bg-red-50 px-2.5 py-1 rounded-full">Shop closed</span>}
         </div>
         <OrderQueue />
       </div>

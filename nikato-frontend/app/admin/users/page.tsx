@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui';
 type UserRow = { id: string; phone: string | null; full_name: string | null; role: string; is_active: boolean; created_at: string };
 
 const ROLE_COLOR: Record<string, string> = {
-  customer: 'bg-blue-100 text-blue-700', shop_owner: 'bg-orange-100 text-orange-700',
+  customer: 'bg-blue-100 text-blue-700', shop_owner: 'bg-brand-light text-orange-700',
   delivery: 'bg-green-100 text-green-700', admin: 'bg-purple-100 text-purple-700',
 };
 
@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone"
-            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35] w-64" />
+            className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#7ED957] w-64" />
         </div>
       </div>
       {isLoading ? (

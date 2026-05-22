@@ -51,7 +51,7 @@ export default function AdminOrdersPage() {
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
         {STATUS_OPTIONS.map(opt => (
           <button key={opt} onClick={() => setStatusFilter(opt)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium capitalize transition-colors ${statusFilter === opt ? 'bg-[#FF6B35] text-white' : 'bg-gray-100 text-gray-600'}`}>
+            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium capitalize transition-colors ${statusFilter === opt ? 'bg-[#7ED957] text-white' : 'bg-gray-100 text-gray-600'}`}>
             {opt.replace('_',' ')}
           </button>
         ))}

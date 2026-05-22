@@ -17,7 +17,7 @@ export function ActiveDelivery() {
   return (
     <Link
       href={`/delivery/orders/${currentDelivery.id}`}
-      className="block bg-[#FF6B35] rounded-2xl p-4 text-white"
+      className="block bg-[#7ED957] rounded-2xl p-4 text-white"
     >
       <div className="flex items-center justify-between mb-3">
         <div>

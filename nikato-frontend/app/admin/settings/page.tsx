@@ -18,7 +18,7 @@ export default function AdminSettingsPage() {
             <p className="text-sm text-gray-500">
               Platform-level settings (default commission rate, min order amount, delivery fee structure) are currently
               managed via Supabase database. Use the Supabase Studio at{' '}
-              <a href="http://localhost:54323" target="_blank" rel="noreferrer" className="text-[#FF6B35] font-medium">
+              <a href="http://localhost:54323" target="_blank" rel="noreferrer" className="text-[#7ED957] font-medium">
                 localhost:54323
               </a>{' '}
               to modify these values.

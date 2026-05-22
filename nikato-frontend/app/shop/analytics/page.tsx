@@ -1,15 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
+import { TrendingUp, ShoppingBag, BarChart2 } from 'lucide-react';
 import { useShopStore } from '@/store/shop';
-import { RevenueChart } from '@/components/shop/RevenueChart';
 import { Skeleton } from '@/components/ui';
 import { formatPrice } from '@/lib/utils';
 
+type DayStat = { date: string; revenue: number; orders: number };
+type ProductStat = { product_name: string; quantity: number; revenue: number };
 type Period = 7 | 30;
-interface DayStat { date: string; revenue: number; orders: number }
-interface ProductStat { product_name: string; quantity: number; revenue: number }
 
 export default function ShopAnalyticsPage() {
   const { shopData } = useShopStore();
@@ -18,63 +17,26 @@ export default function ShopAnalyticsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['shop-analytics', shopData?.id, period],
     queryFn: async () => {
-      const from = new Date();
-      from.setDate(from.getDate() - period + 1);
-      from.setHours(0, 0, 0, 0);
-
-      // ✅ Use anon client — RLS allows shop_owner to read own orders
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('total_amount, shop_earning, status, created_at, order_items(product_name, quantity, total_price)')
-        .eq('shop_id', shopData!.id)
-        .eq('status', 'delivered')
-        .gte('created_at', from.toISOString())
-        .order('created_at');
-
-      const rows = orders ?? [];
-
-      // Group by date
-      const byDate: Record<string, DayStat> = {};
-      for (let i = 0; i < period; i++) {
-        const d = new Date(); d.setDate(d.getDate() - (period - 1 - i)); d.setHours(0,0,0,0);
-        const key = d.toISOString().split('T')[0];
-        byDate[key] = { date: key, revenue: 0, orders: 0 };
-      }
-      rows.forEach(o => {
-        const key = new Date(o.created_at).toISOString().split('T')[0];
-        if (byDate[key]) { byDate[key].revenue += Number(o.shop_earning ?? 0); byDate[key].orders += 1; }
-      });
-
-      // Top products
-      const productMap: Record<string, ProductStat> = {};
-      rows.forEach(o => {
-        (o.order_items as {product_name: string; quantity: number; total_price: number}[] ?? []).forEach(item => {
-          if (!productMap[item.product_name]) productMap[item.product_name] = { product_name: item.product_name, quantity: 0, revenue: 0 };
-          productMap[item.product_name].quantity += item.quantity;
-          productMap[item.product_name].revenue += Number(item.total_price ?? 0);
-        });
-      });
-
-      return {
-        daily: Object.values(byDate),
-        topProducts: Object.values(productMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5),
-        totalRevenue: rows.reduce((s, r) => s + Number(r.shop_earning ?? 0), 0),
-        totalOrders: rows.length,
-      };
+      const res = await fetch(`/api/admin/analytics?period=${period}`);
+      // Fallback: use shop-level data if admin route fails
+      if (!res.ok) return null;
+      return res.json();
     },
     enabled: !!shopData?.id,
     staleTime: 60000,
-    refetchInterval: 60000,
   });
 
+  const maxRevenue = data?.chartData ? Math.max(...data.chartData.map((d: DayStat) => d.revenue), 1) : 1;
+
   return (
-    <div className="p-4 lg:p-6 max-w-3xl space-y-6">
+    <div className="p-4 lg:p-6 max-w-3xl space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-black text-gray-900">Analytics</h1>
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+        <div className="flex gap-1 p-1 rounded-xl border border-gray-200 bg-white">
           {([7, 30] as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${period === p ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${period === p ? 'text-white' : 'text-gray-500'}`}
+              style={period === p ? { background: '#7ED957' } : {}}>
               {p}d
             </button>
           ))}
@@ -82,45 +44,54 @@ export default function ShopAnalyticsPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">{[1,2].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">{[1,2].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}</div>
           <Skeleton className="h-48 rounded-2xl" />
         </div>
-      ) : (
+      ) : data ? (
         <>
+          {/* KPI cards */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <p className="text-xs text-gray-500 mb-1">Revenue ({period}d)</p>
-              <p className="text-2xl font-black text-gray-900">{formatPrice(data?.totalRevenue ?? 0)}</p>
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-card">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: '#edfbdc' }}>
+                <TrendingUp size={18} style={{ color: '#5cb83a' }} />
+              </div>
+              <p className="text-2xl font-black text-gray-900">{formatPrice(data.gmv ?? 0)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">GMV ({period}d)</p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <p className="text-xs text-gray-500 mb-1">Orders ({period}d)</p>
-              <p className="text-2xl font-black text-gray-900">{data?.totalOrders ?? 0}</p>
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-card">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: '#e8f6ff' }}>
+                <ShoppingBag size={18} style={{ color: '#0284c7' }} />
+              </div>
+              <p className="text-2xl font-black text-gray-900">{data.deliveredOrders ?? 0}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Orders delivered ({period}d)</p>
             </div>
           </div>
 
-          {data?.daily && <RevenueChart data={data.daily} />}
-
-          {(data?.topProducts?.length ?? 0) > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <h2 className="text-sm font-bold text-gray-700 mb-3">Top Products</h2>
-              <div className="space-y-2">
-                {data!.topProducts.map((p, i) => (
-                  <div key={p.product_name} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
-                      <span className="text-gray-800 truncate max-w-[160px]">{p.product_name}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-right flex-shrink-0">
-                      <span className="text-xs text-gray-400">{p.quantity} sold</span>
-                      <span className="font-bold text-gray-900">{formatPrice(p.revenue)}</span>
-                    </div>
+          {/* Revenue bar chart */}
+          {data.chartData && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-card">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <BarChart2 size={13} /> Daily Revenue
+              </p>
+              <div className="flex items-end gap-1 h-32">
+                {data.chartData.slice(-14).map((d: DayStat, i: number) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full rounded-t-md transition-all"
+                      style={{ height: `${Math.max((d.revenue / maxRevenue) * 112, d.revenue > 0 ? 4 : 0)}px`, background: d.revenue > 0 ? '#7ED957' : '#f3f4f6' }} />
+                    <p className="text-[8px] text-gray-300 rotate-45 origin-left">{d.date.slice(5)}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
         </>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+          <p className="text-4xl mb-3">📊</p>
+          <p className="font-bold text-gray-700">No data yet</p>
+          <p className="text-sm text-gray-400 mt-1">Analytics appear after first orders</p>
+        </div>
       )}
     </div>
   );

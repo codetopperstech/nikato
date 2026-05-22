@@ -36,7 +36,7 @@ export default function SearchPage() {
         <div className="flex-1 relative">
           <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search products…"
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35]" />
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#7ED957]" />
         </div>
       </div>
       <div className="max-w-lg mx-auto px-4 py-4">
@@ -45,7 +45,7 @@ export default function SearchPage() {
         ) : results.length === 0 && query.length >= 2 ? (
           <p className="text-center text-gray-400 py-12">No products found for "{query}"</p>
         ) : results.map(p => (
-          <Link key={p.id} href={`/shops/${p.shop_id}`} className="flex items-center gap-3 bg-white rounded-2xl p-3 border border-gray-100 mb-2 hover:border-[#FF6B35]/30 transition-colors">
+          <Link key={p.id} href={`/shops/${p.shop_id}`} className="flex items-center gap-3 bg-white rounded-2xl p-3 border border-gray-100 mb-2 hover:border-[#7ED957]/30 transition-colors">
             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
               {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" /> : <span className="text-xl">🛒</span>}
             </div>

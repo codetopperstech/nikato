@@ -49,7 +49,7 @@ export function AddToCartButton({ product, shopId, shopName }: AddToCartButtonPr
         className={cn(
           'flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all',
           product.is_available
-            ? 'bg-[#FF6B35] text-white hover:bg-[#e55a26] active:scale-95'
+            ? 'bg-[#7ED957] text-white hover:bg-[#e55a26] active:scale-95'
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         )}
       >
@@ -60,7 +60,7 @@ export function AddToCartButton({ product, shopId, shopName }: AddToCartButtonPr
   }
 
   return (
-    <div className="flex items-center gap-1 bg-[#FF6B35] rounded-xl overflow-hidden">
+    <div className="flex items-center gap-1 bg-[#7ED957] rounded-xl overflow-hidden">
       <button
         onClick={() => updateQty(product.id, qty - 1)}
         className="p-1.5 text-white hover:bg-[#e55a26] transition-colors"

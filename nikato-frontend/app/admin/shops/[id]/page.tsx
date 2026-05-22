@@ -135,7 +135,7 @@ export default function AdminShopDetailPage() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Commission Earned</span>
-            <span className="font-bold text-[#FF6B35]">{formatPrice(orderStats.commission)}</span>
+            <span className="font-bold text-[#7ED957]">{formatPrice(orderStats.commission)}</span>
           </div>
         </Card>
       )}

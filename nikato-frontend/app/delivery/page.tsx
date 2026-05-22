@@ -1,80 +1,53 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 import { useDeliveryStore } from '@/store/delivery';
-import { useAuth } from '@/hooks/useAuth';
 import { OnlineToggle } from '@/components/delivery/OnlineToggle';
 import { ActiveDelivery } from '@/components/delivery/ActiveDelivery';
 import { EarningsSummary } from '@/components/delivery/EarningsSummary';
-import { Badge, Skeleton } from '@/components/ui';
-import { formatPrice, formatRelativeTime } from '@/lib/utils';
-import type { Order } from '@/types';
+import { formatPrice } from '@/lib/utils';
 
-export default function DeliveryHomePage() {
-  const { profile } = useAuth();
-  const { isOnline, currentDelivery } = useDeliveryStore();
-
-  const { data: available = [], isLoading } = useQuery<Order[]>({
-    queryKey: ['available-orders'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*, shop:shops(name, address_line)')
-        .eq('status', 'ready')
-        .is('delivery_partner_id', null)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      return (data ?? []) as Order[];
-    },
-    enabled: isOnline && !currentDelivery,
-    refetchInterval: 15000,
-  });
+export default function DeliveryDashboard() {
+  const { isOnline, currentDelivery, earnings } = useDeliveryStore();
 
   return (
-    <div className="p-4 space-y-5 max-w-lg mx-auto">
-      <div>
-        <p className="text-xs text-gray-500">Welcome back</p>
-        <h1 className="text-2xl font-black text-gray-900">{profile?.full_name ?? 'Delivery Partner'}</h1>
+    <div className="p-4 max-w-lg mx-auto space-y-5 pb-24">
+      <div className="pt-2">
+        <h1 className="text-2xl font-black text-gray-900">Deliveries</h1>
+        <p className="text-sm text-gray-400 mt-0.5">{isOnline ? '🟢 Looking for orders…' : '💤 You\'re offline'}</p>
       </div>
+
       <OnlineToggle />
-      {currentDelivery && <ActiveDelivery />}
-      <EarningsSummary />
-      {isOnline && !currentDelivery && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              {isLoading ? 'Loading...' : `Available (${available.length})`}
-            </h2>
-            <Link href="/delivery/orders" className="text-xs text-[#FF6B35] font-semibold flex items-center gap-0.5">
-              See all <ChevronRight size={14} />
-            </Link>
-          </div>
-          {isLoading ? (
-            <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} className="h-16 rounded-2xl" />)}</div>
-          ) : available.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-2xl border border-gray-100">No orders available nearby.</p>
-          ) : (
-            <div className="space-y-2">
-              {available.map((o) => {
-                const shop = (o as { shop?: { name: string } }).shop;
-                return (
-                  <Link key={o.id} href={`/delivery/orders/${o.id}`}
-                    className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-4 hover:border-[#FF6B35]/30">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900">#{o.order_number}</p>
-                      <p className="text-xs text-gray-500 truncate">{shop?.name} · {formatRelativeTime(o.created_at)}</p>
-                    </div>
-                    <Badge variant="success">{formatPrice(o.delivery_earning)}</Badge>
-                    <ChevronRight size={16} className="text-gray-400" />
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+
+      {currentDelivery ? (
+        <ActiveDelivery />
+      ) : isOnline ? (
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-card">
+          <div className="text-4xl mb-3 animate-pulse">🛵</div>
+          <p className="font-bold text-gray-700">Looking for orders…</p>
+          <p className="text-sm text-gray-400 mt-1">Stay online to receive delivery requests</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-card">
+          <div className="text-4xl mb-3">💤</div>
+          <p className="font-bold text-gray-700">You're offline</p>
+          <p className="text-sm text-gray-400 mt-1">Go online to start earning</p>
         </div>
       )}
+
+      {/* Earnings strip */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Today', amount: earnings.today },
+          { label: 'This Week', amount: earnings.week },
+          { label: 'This Month', amount: earnings.month },
+        ].map(e => (
+          <div key={e.label} className="bg-white rounded-2xl border border-gray-100 p-3.5 text-center shadow-card">
+            <p className="text-base font-black text-gray-900">{formatPrice(e.amount)}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5 font-medium">{e.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <EarningsSummary />
     </div>
   );
 }

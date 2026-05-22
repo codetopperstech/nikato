@@ -138,8 +138,8 @@ export default function OTPPage() {
       <div className="flex-1 flex flex-col justify-center px-6 py-8 max-w-md mx-auto w-full">
         <div className="bg-white rounded-3xl shadow-lg p-8">
           {/* Icon */}
-          <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-            <Shield size={32} className="text-[#FF6B35]" />
+          <div className="w-16 h-16 bg-brand-light rounded-2xl flex items-center justify-center mb-6 mx-auto">
+            <Shield size={32} className="text-[#7ED957]" />
           </div>
 
           <h2 className="text-2xl font-black text-gray-900 text-center mb-1">
@@ -164,7 +164,7 @@ export default function OTPPage() {
                 value={digit}
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
-                className="w-11 h-14 text-center text-xl font-bold rounded-xl border-2 border-gray-200 focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/20 focus:outline-none transition-all bg-white text-gray-900"
+                className="w-11 h-14 text-center text-xl font-bold rounded-xl border-2 border-gray-200 focus:border-[#7ED957] focus:ring-2 focus:ring-[#7ED957]/20 focus:outline-none transition-all bg-white text-gray-900"
               />
             ))}
           </div>
@@ -185,7 +185,7 @@ export default function OTPPage() {
             {canResend ? (
               <button
                 onClick={handleResend}
-                className="text-sm text-[#FF6B35] font-semibold hover:underline"
+                className="text-sm text-[#7ED957] font-semibold hover:underline"
               >
                 Resend OTP
               </button>

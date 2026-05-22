@@ -1,122 +1,106 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { Settings, Save } from 'lucide-react';
 import { useShopStore } from '@/store/shop';
 import { toast } from '@/store/ui';
-import { Button, Input, Card } from '@/components/ui';
-import { formatPrice } from '@/lib/utils';
+import type { Shop } from '@/types';
 
-const schema = z.object({
-  name: z.string().min(2),
-  description: z.string().optional(),
-  phone: z.string().min(10),
-  address_line: z.string().min(5),
-  city: z.string().min(2),
-  pincode: z.string().length(6, 'Pincode must be 6 digits'),
-  delivery_radius_km: z.coerce.number().min(0.5).max(50),
-  min_order_amount: z.coerce.number().min(0),
-});
-
-type FormValues = z.infer<typeof schema>;
+type FormValues = {
+  name: string;
+  phone: string;
+  address_line: string;
+  city: string;
+  pincode: string;
+  delivery_radius_km: number;
+  min_order_amount: number;
+  avg_delivery_minutes: number;
+};
 
 export default function ShopSettingsPage() {
   const { shopData, setShop } = useShopStore();
   const [saving, setSaving] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isDirty },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+    defaultValues: {
+      name: shopData?.name ?? '',
+      phone: shopData?.phone ?? '',
+      address_line: shopData?.address_line ?? '',
+      city: shopData?.city ?? '',
+      pincode: shopData?.pincode ?? '',
+      delivery_radius_km: shopData?.delivery_radius_km ?? 3,
+      min_order_amount: shopData?.min_order_amount ?? 0,
+      avg_delivery_minutes: shopData?.avg_delivery_minutes ?? 30,
+    },
+  });
 
-  useEffect(() => {
-    if (shopData) {
-      reset({
-        name: shopData.name,
-        description: shopData.description ?? '',
-        phone: shopData.phone,
-        address_line: shopData.address_line,
-        city: shopData.city,
-        pincode: shopData.pincode,
-        delivery_radius_km: shopData.delivery_radius_km,
-        min_order_amount: shopData.min_order_amount,
-      });
-    }
-  }, [shopData, reset]);
-
-  async function onSubmit(values: FormValues) {
-    if (!shopData) return;
+  const onSubmit = async (values: FormValues) => {
     setSaving(true);
-    const res = await fetch('/api/shop/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    });
+    const res = await fetch('/api/shop/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
     const data = await res.json();
-    if (!res.ok) {
-      toast.error('Failed to save settings', data.error ?? '');
-    } else {
-      setShop(data.shop);
-      toast.success('Settings saved!');
-    }
+    if (!res.ok) toast.error('Failed to save', data.error ?? '');
+    else { setShop(data.shop as Shop); toast.success('Settings saved!'); }
     setSaving(false);
-  }
+  };
+
+  const inputCls = (err?: boolean) =>
+    `w-full border-[1.5px] rounded-xl px-4 py-3 text-sm outline-none transition-all bg-white ${err ? 'border-red-400' : 'border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/15'}`;
 
   return (
-    <div className="p-4 lg:p-6 max-w-xl space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Shop Settings</h1>
+    <div className="p-4 lg:p-6 max-w-xl">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#edfbdc' }}>
+          <Settings size={20} style={{ color: '#5cb83a' }} />
+        </div>
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Settings</h1>
+          <p className="text-xs text-gray-400">Update your shop details</p>
+        </div>
+      </div>
 
-      <Card className="p-5">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input label="Shop Name" {...register('name')} error={errors.name?.message} />
-          <Input label="Description" {...register('description')} />
-          <Input label="Phone" {...register('phone')} error={errors.phone?.message} />
-          <Input label="Address" {...register('address_line')} error={errors.address_line?.message} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="City" {...register('city')} error={errors.city?.message} />
-            <Input label="Pincode" {...register('pincode')} error={errors.pincode?.message} />
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-card space-y-4">
+        <div>
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Shop Name *</label>
+          <input {...register('name', { required: true })} className={inputCls(!!errors.name)} />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Phone</label>
+          <input {...register('phone')} className={inputCls()} />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Address</label>
+          <input {...register('address_line')} className={inputCls()} placeholder="Street, Area" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">City</label>
+            <input {...register('city')} className={inputCls()} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Delivery Radius (km)"
-              type="number"
-              step="0.5"
-              {...register('delivery_radius_km')}
-              error={errors.delivery_radius_km?.message}
-            />
-            <Input
-              label="Min Order (₹)"
-              type="number"
-              {...register('min_order_amount')}
-              error={errors.min_order_amount?.message}
-            />
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Pincode</label>
+            <input {...register('pincode')} className={inputCls()} />
           </div>
-          <Button type="submit" variant="primary" className="w-full" isLoading={saving} disabled={!isDirty}>
-            Save Changes
-          </Button>
-        </form>
-      </Card>
-
-      {/* Read-only info */}
-      {shopData && (
-        <Card className="p-5 space-y-3">
-          <h2 className="text-sm font-bold text-gray-700">Platform Info</h2>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Commission Rate</span>
-            <span className="font-semibold text-gray-900">{(shopData.commission_rate * 100).toFixed(0)}%</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Radius (km)</label>
+            <input type="number" step="0.1" {...register('delivery_radius_km')} className={inputCls()} />
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Approval Status</span>
-            <span className={`font-semibold ${shopData.is_approved ? 'text-green-600' : 'text-yellow-600'}`}>
-              {shopData.is_approved ? 'Approved' : 'Pending Approval'}
-            </span>
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Min Order (₹)</label>
+            <input type="number" {...register('min_order_amount')} className={inputCls()} />
           </div>
-        </Card>
-      )}
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">ETA (mins)</label>
+            <input type="number" {...register('avg_delivery_minutes')} className={inputCls()} />
+          </div>
+        </div>
+        <button type="submit" disabled={saving}
+          className="w-full py-3.5 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{ background: '#7ED957', boxShadow: '0 4px 16px rgba(126,217,87,0.3)' }}>
+          {saving ? <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <><Save size={15} /> Save Settings</>}
+        </button>
+      </form>
     </div>
   );
 }

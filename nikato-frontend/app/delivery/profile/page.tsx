@@ -24,7 +24,7 @@ export default function DeliveryProfilePage() {
     <div className="p-4 max-w-lg mx-auto space-y-5">
       <h1 className="text-2xl font-black text-gray-900">Profile</h1>
       <Card className="p-5 flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-[#FF6B35] flex items-center justify-center flex-shrink-0">
+        <div className="w-16 h-16 rounded-2xl bg-[#7ED957] flex items-center justify-center flex-shrink-0">
           <span className="text-white text-xl font-black">{profile ? getInitials(profile.full_name ?? '') : '?'}</span>
         </div>
         <div>

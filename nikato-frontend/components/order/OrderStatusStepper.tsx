@@ -72,7 +72,7 @@ export function OrderStatusStepper({ status }: OrderStatusStepperProps) {
         {/* Connector line */}
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 z-0">
           <div
-            className="h-full bg-[#FF6B35] transition-all duration-500"
+            className="h-full bg-[#7ED957] transition-all duration-500"
             style={{
               width: `${Math.max(0, (currentStep / (STATUS_STEPS.length - 1)) * 100)}%`,
             }}
@@ -93,7 +93,7 @@ export function OrderStatusStepper({ status }: OrderStatusStepperProps) {
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300',
                   isDone || isActive
-                    ? 'bg-[#FF6B35] border-[#FF6B35] text-white'
+                    ? 'bg-[#7ED957] border-[#7ED957] text-white'
                     : 'bg-white border-gray-200 text-gray-400'
                 )}
               >
@@ -102,7 +102,7 @@ export function OrderStatusStepper({ status }: OrderStatusStepperProps) {
               <span
                 className={cn(
                   'text-[10px] text-center leading-tight',
-                  isActive ? 'text-[#FF6B35] font-bold' : 'text-gray-400'
+                  isActive ? 'text-[#7ED957] font-bold' : 'text-gray-400'
                 )}
               >
                 {step.label}
@@ -172,8 +172,8 @@ export function OrderCard({ order, shopName }: OrderCardProps) {
             {order.payment_method === 'COD' ? 'Cash on delivery' : 'Online payment'}
           </span>
           {isActive && (
-            <span className="text-xs text-[#FF6B35] font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-pulse" />
+            <span className="text-xs text-[#7ED957] font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#7ED957] animate-pulse" />
               Live tracking →
             </span>
           )}

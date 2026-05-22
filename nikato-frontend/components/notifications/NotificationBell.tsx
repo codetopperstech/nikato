@@ -22,7 +22,7 @@ export function NotificationItem({
   onRead: (id: string) => void;
 }) {
   const icons = {
-    ORDER_UPDATE: <Package size={14} className="text-[#FF6B35]" />,
+    ORDER_UPDATE: <Package size={14} className="text-[#7ED957]" />,
     PROMO: <Tag size={14} className="text-purple-500" />,
     SYSTEM: <Settings size={14} className="text-gray-500" />,
   };
@@ -32,7 +32,7 @@ export function NotificationItem({
       onClick={() => onRead(notification.id)}
       className={cn(
         'w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left',
-        !notification.is_read && 'bg-orange-50'
+        !notification.is_read && 'bg-brand-light'
       )}
     >
       <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -48,7 +48,7 @@ export function NotificationItem({
         </p>
       </div>
       {!notification.is_read && (
-        <div className="w-2 h-2 rounded-full bg-[#FF6B35] flex-shrink-0 mt-1.5" />
+        <div className="w-2 h-2 rounded-full bg-[#7ED957] flex-shrink-0 mt-1.5" />
       )}
     </button>
   );
@@ -73,7 +73,7 @@ export function NotificationBell() {
       >
         <Bell size={20} className="text-gray-700" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-[#FF6B35] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-[#7ED957] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -93,7 +93,7 @@ export function NotificationBell() {
                 {unreadCount > 0 && (
                   <button
                     onClick={() => markAllRead()}
-                    className="text-[10px] text-[#FF6B35] font-medium hover:underline"
+                    className="text-[10px] text-[#7ED957] font-medium hover:underline"
                   >
                     Mark all read
                   </button>

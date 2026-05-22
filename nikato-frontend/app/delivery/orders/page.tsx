@@ -38,7 +38,7 @@ export default function AvailableOrdersPage() {
         <div className="space-y-3">
           {orders.map((order: any) => (
             <Link key={order.id} href={`/delivery/orders/${order.id}`}
-              className="block bg-white rounded-2xl border border-gray-100 p-4 hover:border-[#FF6B35]/30 transition-colors">
+              className="block bg-white rounded-2xl border border-gray-100 p-4 hover:border-[#7ED957]/30 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-gray-900">#{order.order_number}</span>
                 <Badge variant="info">Ready for pickup</Badge>

@@ -31,7 +31,7 @@ export default function AdminDeliveryPartnersPage() {
       </div>
       {error && <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl mb-4 text-sm">⚠️ {error}</div>}
       {loading ? (
-        <div className="text-center py-16 text-orange-500 animate-pulse">Loading...</div>
+        <div className="text-center py-16 text-brand-dark animate-pulse">Loading...</div>
       ) : partners.length === 0 ? (
         <div className="bg-white rounded-2xl border p-8 text-center text-gray-400">
           <div className="text-4xl mb-3">🛵</div>

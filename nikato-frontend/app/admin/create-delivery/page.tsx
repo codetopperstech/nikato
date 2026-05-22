@@ -52,7 +52,7 @@ export default function CreateDeliveryPage() {
             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
         </div>
         <button onClick={submit} disabled={loading || !form.phone || !form.full_name}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold disabled:opacity-50 transition">
+          className="w-full bg-brand hover:bg-brand-dark text-white py-3 rounded-xl font-bold disabled:opacity-50 transition">
           {loading ? 'Creating...' : '+ Add Delivery Partner'}
         </button>
       </div>

@@ -58,7 +58,7 @@ export default function AdminShopsPage() {
           <p className="text-gray-400 text-sm">{shops.length} total shops</p>
         </div>
         <Link href="/admin/create-shop"
-          className="bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-orange-600 transition">
+          className="bg-brand text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-brand-dark transition">
           + Create Shop
         </Link>
       </div>
@@ -73,14 +73,14 @@ export default function AdminShopsPage() {
       <div className="flex gap-2 mb-4">
         {(['all', 'pending', 'approved'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition ${filter === f ? 'bg-orange-500 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
+            className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition ${filter === f ? 'bg-brand text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
             {f} {f === 'pending' ? `(${shops.filter(s => !s.is_approved).length})` : f === 'approved' ? `(${shops.filter(s => s.is_approved).length})` : `(${shops.length})`}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="text-center py-16 text-orange-500 animate-pulse">Loading shops...</div>
+        <div className="text-center py-16 text-brand-dark animate-pulse">Loading shops...</div>
       ) : (
         <div className="space-y-3">
           {filtered.length === 0 ? (
@@ -91,7 +91,7 @@ export default function AdminShopsPage() {
           ) : filtered.map(shop => (
             <div key={shop.id} className="bg-white rounded-2xl border shadow-sm p-4 flex items-center justify-between hover:shadow-md transition">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-2xl">🏪</div>
+                <div className="w-12 h-12 bg-brand-light rounded-xl flex items-center justify-center text-2xl">🏪</div>
                 <div>
                   <h3 className="font-bold text-sm">{shop.name}</h3>
                   <p className="text-xs text-gray-400">{shop.city} · {shop.phone}</p>
@@ -104,7 +104,7 @@ export default function AdminShopsPage() {
                   {shop.is_open ? '● Open' : '● Closed'}
                 </button>
                 <button onClick={() => toggleApprove(shop.id, shop.is_approved)}
-                  className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${shop.is_approved ? 'bg-blue-100 text-blue-600 hover:bg-red-100 hover:text-red-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                  className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${shop.is_approved ? 'bg-blue-100 text-blue-600 hover:bg-red-100 hover:text-red-600' : 'bg-brand text-white hover:bg-brand-dark'}`}>
                   {shop.is_approved ? 'Approved ✓' : 'Approve →'}
                 </button>
                 <Link href={`/admin/shops/${shop.id}`}

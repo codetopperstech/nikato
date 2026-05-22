@@ -45,7 +45,7 @@ export default function AdminCommissionsPage() {
     { key: 'commission_rate', label: 'Commission', render: (r) =>
       editingId === r.id
         ? <Input value={editRate} onChange={(e) => setEditRate(e.target.value)} className="w-24 py-1.5" placeholder="0.10" type="number" step="0.01" />
-        : <span className="font-bold text-[#FF6B35]">{(r.commission_rate * 100).toFixed(0)}%</span>
+        : <span className="font-bold text-[#7ED957]">{(r.commission_rate * 100).toFixed(0)}%</span>
     },
   ];
 

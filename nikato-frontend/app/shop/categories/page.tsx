@@ -80,7 +80,7 @@ export default function ShopCategoriesPage() {
                 <>
                   <input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && saveEdit(cat.id)}
-                    className="flex-1 text-sm font-medium text-gray-900 outline-none border-b-2 border-[#FF6B35] bg-transparent" />
+                    className="flex-1 text-sm font-medium text-gray-900 outline-none border-b-2 border-[#7ED957] bg-transparent" />
                   <button onClick={() => saveEdit(cat.id)} className="p-1 text-green-600 hover:bg-green-50 rounded-lg"><Check size={16} /></button>
                   <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:bg-gray-100 rounded-lg"><X size={16} /></button>
                 </>

@@ -32,7 +32,7 @@ export function AddressSelector({
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
-        <Spinner size="md" className="text-[#FF6B35]" />
+        <Spinner size="md" className="text-[#7ED957]" />
       </div>
     );
   }
@@ -46,7 +46,7 @@ export function AddressSelector({
           className={cn(
             'w-full flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all',
             selectedId === address.id
-              ? 'border-[#FF6B35] bg-orange-50'
+              ? 'border-[#7ED957] bg-brand-light'
               : 'border-gray-200 bg-white hover:border-gray-300'
           )}
         >
@@ -54,7 +54,7 @@ export function AddressSelector({
             size={18}
             className={cn(
               'mt-0.5 flex-shrink-0',
-              selectedId === address.id ? 'text-[#FF6B35]' : 'text-gray-400'
+              selectedId === address.id ? 'text-[#7ED957]' : 'text-gray-400'
             )}
           />
           <div className="flex-1 min-w-0">
@@ -64,7 +64,7 @@ export function AddressSelector({
             </p>
           </div>
           {selectedId === address.id && (
-            <CheckCircle2 size={18} className="text-[#FF6B35] flex-shrink-0 mt-0.5" />
+            <CheckCircle2 size={18} className="text-[#7ED957] flex-shrink-0 mt-0.5" />
           )}
         </button>
       ))}
@@ -72,7 +72,7 @@ export function AddressSelector({
       {onAddNew && (
         <button
           onClick={onAddNew}
-          className="w-full flex items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors"
+          className="w-full flex items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-[#7ED957] hover:text-[#7ED957] transition-colors"
         >
           <Plus size={16} />
           <span className="text-sm font-medium">Add new address</span>
@@ -128,7 +128,7 @@ export function PaymentMethodSelector({
           className={cn(
             'w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all',
             selected === opt.value
-              ? 'border-[#FF6B35] bg-orange-50'
+              ? 'border-[#7ED957] bg-brand-light'
               : 'border-gray-200 bg-white hover:border-gray-300'
           )}
         >
@@ -143,7 +143,7 @@ export function PaymentMethodSelector({
             className={cn(
               'w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all',
               selected === opt.value
-                ? 'border-[#FF6B35] bg-[#FF6B35]'
+                ? 'border-[#7ED957] bg-[#7ED957]'
                 : 'border-gray-300'
             )}
           >

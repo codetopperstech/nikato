@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useShopStore } from '@/store/shop';
 import { toast } from '@/store/ui';
-import { cn } from '@/lib/utils';
 
 export function OpenCloseToggle() {
   const { shopData, isOpen, setIsOpen } = useShopStore();
@@ -12,43 +11,32 @@ export function OpenCloseToggle() {
     if (!shopData || loading) return;
     const next = !isOpen;
     setLoading(true);
-    setIsOpen(next); // ✅ Optimistic update
-
+    setIsOpen(next);
     try {
-      const res = await fetch('/api/shop/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_open: next }),
-      });
+      const res = await fetch('/api/shop/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_open: next }) });
       const data = await res.json();
-      if (!res.ok) {
-        setIsOpen(!next); // ✅ Rollback on failure
-        toast.error(data.error ?? 'Failed to update shop status');
-      } else {
-        setIsOpen(data.is_open);
-        toast.success(data.is_open ? '✅ Shop is now Open' : '🔴 Shop is now Closed');
-      }
-    } catch {
-      setIsOpen(!next); // ✅ Rollback on network error
-      toast.error('Network error. Please retry.');
-    }
+      if (!res.ok) { setIsOpen(!next); toast.error(data.error ?? 'Failed to update'); }
+      else { setIsOpen(data.is_open); toast.success(data.is_open ? '✅ Shop is now Open' : '🔴 Shop is now Closed'); }
+    } catch { setIsOpen(!next); toast.error('Network error. Retry.'); }
     setLoading(false);
   }
 
   return (
-    <button
-      onClick={toggle}
-      disabled={loading}
-      className={cn(
-        'flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all',
-        isOpen ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200',
-        loading && 'opacity-60 pointer-events-none'
-      )}
-    >
-      <span className={cn('relative w-10 h-5 rounded-full transition-colors', isOpen ? 'bg-green-500' : 'bg-gray-300')}>
-        <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform', isOpen ? 'translate-x-5' : 'translate-x-0.5')} />
-      </span>
-      {loading ? 'Updating…' : isOpen ? 'Open — accepting orders' : 'Closed — not accepting orders'}
+    <button onClick={toggle} disabled={loading}
+      className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all border-[1.5px] ${isOpen ? 'border-brand/30' : 'border-gray-200 bg-white'} ${loading ? 'opacity-60 pointer-events-none' : ''}`}
+      style={isOpen ? { background: 'linear-gradient(135deg, #edfbdc 0%, #d4f7b4 100%)' } : {}}>
+      <div className="flex items-center gap-3">
+        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isOpen ? 'border-brand-dark' : 'border-gray-300'}`}>
+          {isOpen && <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#7ED957' }} />}
+        </div>
+        <div className="text-left">
+          <p className="text-sm font-bold text-gray-900">{loading ? 'Updating…' : isOpen ? 'Shop is Open' : 'Shop is Closed'}</p>
+          <p className="text-xs text-gray-400">{isOpen ? 'Accepting orders' : 'Not accepting orders'}</p>
+        </div>
+      </div>
+      <div className={`relative w-12 h-6 rounded-full transition-all ${isOpen ? '' : 'bg-gray-200'}`} style={isOpen ? { background: '#7ED957' } : {}}>
+        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isOpen ? 'translate-x-6' : 'translate-x-0.5'}`} />
+      </div>
     </button>
   );
 }

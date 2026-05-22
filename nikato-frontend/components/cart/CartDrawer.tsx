@@ -66,7 +66,7 @@ function CartItem({ item }: { item: import('@/types').CartItem }) {
       <div className="flex items-center gap-1">
         <button
           onClick={() => updateQty(item.product_id, item.quantity - 1)}
-          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors"
+          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:border-[#7ED957] hover:text-[#7ED957] transition-colors"
         >
           {item.quantity === 1 ? <Trash2 size={12} /> : <Minus size={12} />}
         </button>
@@ -75,7 +75,7 @@ function CartItem({ item }: { item: import('@/types').CartItem }) {
         </span>
         <button
           onClick={() => updateQty(item.product_id, item.quantity + 1)}
-          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors"
+          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:border-[#7ED957] hover:text-[#7ED957] transition-colors"
         >
           <Plus size={12} />
         </button>
@@ -159,7 +159,7 @@ export function CartDrawer() {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <ShoppingBag size={20} className="text-[#FF6B35]" />
+            <ShoppingBag size={20} className="text-[#7ED957]" />
             <h2 className="font-bold text-gray-900">
               Your Cart
               {count > 0 && (
@@ -179,7 +179,7 @@ export function CartDrawer() {
 
         {/* Shop name */}
         {shopName && (
-          <div className="px-4 py-2 bg-orange-50 text-xs text-orange-700 font-medium">
+          <div className="px-4 py-2 bg-brand-light text-xs text-orange-700 font-medium">
             From {shopName}
           </div>
         )}

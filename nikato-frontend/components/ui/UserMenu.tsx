@@ -17,7 +17,7 @@ export default function UserMenu({ user }: { user: any }) {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold"
+        className="flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-full text-sm font-semibold"
       >
         👤 {user?.phone ?? 'Account'}
       </button>

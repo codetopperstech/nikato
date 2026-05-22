@@ -55,7 +55,7 @@ export function AdminSidebar() {
     <div className="flex flex-col h-full">
       <div className="p-5 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#FF6B35] flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-[#7ED957] flex items-center justify-center">
             <Shield size={18} className="text-white" />
           </div>
           <div>
@@ -83,7 +83,7 @@ export function AdminSidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                 active
-                  ? 'bg-[#FF6B35] text-white'
+                  ? 'bg-[#7ED957] text-white'
                   : 'text-white/70 hover:bg-white/10 hover:text-white'
               )}
             >
@@ -114,7 +114,7 @@ export function AdminSidebar() {
 
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#1A1A2E] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#FF6B35] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-[#7ED957] flex items-center justify-center">
             <Shield size={14} className="text-white" />
           </div>
           <span className="text-white font-bold text-sm">NIKATO Admin</span>

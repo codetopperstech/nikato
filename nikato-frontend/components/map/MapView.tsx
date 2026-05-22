@@ -14,7 +14,7 @@ const MapViewInner = dynamic(() => import('./MapViewInner'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center bg-gray-100 rounded-2xl h-full w-full">
-      <Spinner size="md" className="text-[#FF6B35]" />
+      <Spinner size="md" className="text-[#7ED957]" />
     </div>
   ),
 });

@@ -32,8 +32,8 @@ export function ShopApprovalCard({ shop, onAction }: ShopApprovalCardProps) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start gap-4">
-      <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-        <Store size={20} className="text-[#FF6B35]" />
+      <div className="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center flex-shrink-0">
+        <Store size={20} className="text-[#7ED957]" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
