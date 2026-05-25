@@ -1,5 +1,6 @@
 'use client';
 import { useForm } from 'react-hook-form';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Category, Product } from '@/types';
@@ -27,7 +28,7 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ defaultValues, categories, onSubmit, isLoading }: ProductFormProps) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<ProductFormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProductFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: defaultValues?.name ?? '',
@@ -118,6 +119,15 @@ export function ProductForm({ defaultValues, categories, onSubmit, isLoading }: 
             <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
           </div>
         </label>
+      </div>
+
+      <div>
+        <ImageUpload
+          bucket="product-images"
+          currentUrl={watch('image_url') || null}
+          onUploaded={(url) => setValue('image_url', url)}
+          label="Product Image"
+        />
       </div>
 
       <button type="submit" disabled={isLoading}

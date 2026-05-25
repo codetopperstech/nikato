@@ -2,12 +2,14 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Settings, Save } from 'lucide-react';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useShopStore } from '@/store/shop';
 import { toast } from '@/store/ui';
 import type { Shop } from '@/types';
 
 type FormValues = {
   name: string;
+  logo_url: string;
   phone: string;
   address_line: string;
   city: string;
@@ -21,7 +23,7 @@ export default function ShopSettingsPage() {
   const { shopData, setShop } = useShopStore();
   const [saving, setSaving] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
       name: shopData?.name ?? '',
       phone: shopData?.phone ?? '',
@@ -31,6 +33,7 @@ export default function ShopSettingsPage() {
       delivery_radius_km: shopData?.delivery_radius_km ?? 3,
       min_order_amount: shopData?.min_order_amount ?? 0,
       avg_delivery_minutes: shopData?.avg_delivery_minutes ?? 30,
+      logo_url: shopData?.logo_url ?? '',
     },
   });
 
@@ -95,6 +98,15 @@ export default function ShopSettingsPage() {
             <input type="number" {...register('avg_delivery_minutes')} className={inputCls()} />
           </div>
         </div>
+        <div className="pt-2 border-t border-gray-100">
+          <ImageUpload
+            bucket="shop-images"
+            currentUrl={shopData?.logo_url}
+            onUploaded={(url) => setValue('logo_url', url)}
+            label="Shop Logo / Banner"
+          />
+        </div>
+
         <button type="submit" disabled={saving}
           className="w-full py-3.5 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
           style={{ background: '#7ED957', boxShadow: '0 4px 16px rgba(126,217,87,0.3)' }}>
