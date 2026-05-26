@@ -52,7 +52,8 @@ export default function EditProductPage() {
     if (!res.ok) {
       toast.error('Failed to save changes', data.error ?? '');
     } else {
-      qc.invalidateQueries({ queryKey: ['shop-products-list', shopData?.id] });
+      await qc.invalidateQueries({ queryKey: ['shop-products-list', shopData?.id] });
+      qc.removeQueries({ queryKey: ['shop-products-list', shopData?.id] });
       toast.success('Product updated!');
       router.push('/shop/products');
     }

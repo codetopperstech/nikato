@@ -26,7 +26,7 @@ export default function ShopProductsPage() {
       return (await res.json()).products as PW[];
     },
     enabled: !!shopData?.id,
-    staleTime: 30000,
+    staleTime: 0, // ✅ always refetch — products must be fresh
   });
 
   const { data: categories = [] } = useQuery<Category[]>({

@@ -38,7 +38,9 @@ export default function NewProductPage() {
       toast.error('Failed to create product', data.error ?? '');
     } else {
       toast.success('Product added!');
-      qc.invalidateQueries({ queryKey: ['shop-products-list', shopData?.id] });
+      // ✅ Force refetch — don't use cached data after create
+      await qc.invalidateQueries({ queryKey: ['shop-products-list', shopData?.id] });
+      qc.removeQueries({ queryKey: ['shop-products-list', shopData?.id] });
       router.push('/shop/products');
     }
     setSaving(false);

@@ -48,11 +48,12 @@ export default function Header() {
           <span className="text-base font-black text-gray-900 tracking-tight">nikato</span>
         </Link>
 
-        {/* Search bar */}
-        <Link href="/search" className="flex-1 max-w-xs">
-          <div className="flex items-center gap-2 bg-surface-2 rounded-xl px-3 py-2 text-sm text-gray-400 hover:bg-gray-100 transition-colors">
+        {/* Search bar — shrinks on small screens, never pushes icons */}
+        <Link href="/search" className="flex-1 min-w-0 max-w-xs">
+          <div className="flex items-center gap-2 bg-surface-2 rounded-xl px-3 py-2 text-sm text-gray-400 hover:bg-gray-100 transition-colors min-w-0">
             <Search size={14} className="flex-shrink-0" />
-            <span className="truncate">Search products…</span>
+            <span className="truncate hidden sm:inline">Search products…</span>
+            <span className="truncate sm:hidden">Search…</span>
           </div>
         </Link>
 

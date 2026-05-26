@@ -47,6 +47,14 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (isLoading) => set({ isLoading }),
       reset: () => set({ user: null, session: null, profile: null, role: null, isLoading: false, isAuthenticated: false }),
     }),
-    { name: 'nikato-auth', partialize: (s) => ({ profile: s.profile, role: s.role }) }
+    {
+      name: 'nikato-auth',
+      // ✅ Only persist profile + role — never persist isLoading
+      partialize: (s) => ({ profile: s.profile, role: s.role }),
+      // ✅ On rehydrate, always set isLoading=true so AuthProvider controls it
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isLoading = true;
+      },
+    }
   )
 );
