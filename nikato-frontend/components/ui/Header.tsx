@@ -41,11 +41,8 @@ export default function Header() {
     <header className="bg-white border-b border-gray-100 sticky top-0 z-50" style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
       <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-1.5 flex-shrink-0">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#7ED957' }}>
-            <span className="text-white text-xs font-black">N</span>
-          </div>
-          <span className="text-base font-black text-gray-900 tracking-tight">nikato</span>
+        <Link href="/" className="flex items-center flex-shrink-0">
+          <img src="/logo.png" alt="NIKATO" className="h-8 w-auto object-contain" />
         </Link>
 
         {/* Search bar — shrinks on small screens, never pushes icons */}
