@@ -42,7 +42,7 @@ export default function Header() {
       <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         {/* Logo */}
         <Link href="/" className="flex items-center flex-shrink-0">
-          <img src="/logo.png" alt="NIKATO" className="h-13 w-auto object-contain" />
+          <img src="/logo.png" alt="NIKATO" className="h-12 w-auto object-contain" />
         </Link>
 
         {/* Search bar — shrinks on small screens, never pushes icons */}
