@@ -11,9 +11,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    async function loadProfile(userId: string) {
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      if (mounted) setProfile((data as Profile) ?? null); // setProfile also sets isLoading=false
+    async function loadProfile(_userId: string) {
+      // ✅ Use service_role API — anon client blocked by RLS on profiles table
+      const res = await fetch('/api/auth/me');
+      if (!mounted) return;
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data as Profile);
+      } else {
+        setProfile(null);
+      }
     }
 
     // ✅ getSession FIRST — then subscribe
