@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase/client';
 import { useDeliveryStore } from '@/store/delivery';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/store/ui';
-import { PickupAction } from '@/components/delivery/PickupAction';
 import { DeliverAction } from '@/components/delivery/DeliverAction';
 import { Button, Badge, Skeleton } from '@/components/ui';
 import { formatPrice, formatOrderDate, getOrderStatusLabel } from '@/lib/utils';
@@ -157,10 +156,7 @@ export default function DeliveryOrderDetailPage() {
             Accept & Pickup
           </Button>
         )}
-        {isMyOrder && order.status === 'picked_up' && false && (
-          <PickupAction orderId={id} onSuccess={() => { qc.invalidateQueries({ queryKey: ['delivery-order', id] }); }} />
-        )}
-        {isMyOrder && order.status === 'picked_up' && false && (
+        {isMyOrder && order.status === 'picked_up' && (
           <DeliverAction orderId={id} onSuccess={() => { setCurrentDelivery(null); router.push('/delivery'); }} />
         )}
       </div>

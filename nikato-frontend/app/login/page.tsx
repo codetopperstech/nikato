@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client'; // still used for OTP send/verify
 import { ArrowRight, Phone, Lock, CheckCircle } from 'lucide-react';
 
 type Step = 'phone' | 'otp' | 'welcome' | 'onboarding';
@@ -32,8 +32,9 @@ export default function LoginPage() {
     const { data, error } = await supabase.auth.verifyOtp({ phone, token: otp, type: 'sms' });
     if (error) { setError(error.message); setIsLoading(false); return; }
     if (data.user) {
-      const uid = data.user.id; setUserId(uid);
-      const { data: profile } = await supabase.from('profiles').select('role,full_name').eq('id', uid).single();
+      setUserId(data.user.id);
+      const res = await fetch('/api/auth/me');
+      const profile = res.ok ? await res.json() : null;
       const role = profile?.role;
       if (role === 'admin') { router.push('/admin'); return; }
       if (role === 'shop_owner') { router.push('/shop'); return; }

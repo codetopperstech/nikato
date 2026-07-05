@@ -104,6 +104,16 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Deterministic 4-digit delivery OTP derived from order ID.
+ * Both customer and delivery partner compute the same value — no DB column needed.
+ */
+export function getDeliveryOtp(orderId: string): string {
+  const hex = orderId.replace(/-/g, '').slice(-8);
+  const num = parseInt(hex, 16) % 10000;
+  return String(num).padStart(4, '0');
+}
+
 /** Generate initials from name */
 export function getInitials(name: string): string {
   return name

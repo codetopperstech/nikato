@@ -6,7 +6,7 @@ import { ArrowLeft, MapPin, Package, CheckCircle2, Clock, Truck, Home } from 'lu
 import { supabase } from '@/lib/supabase/client';
 import { useOrderRealtime } from '@/hooks/useOrderRealtime';
 import { Spinner } from '@/components/ui';
-import { formatPrice, formatOrderDate } from '@/lib/utils';
+import { formatPrice, formatOrderDate, getDeliveryOtp } from '@/lib/utils';
 import type { Order, OrderItem } from '@/types';
 
 const STEPS = [
@@ -115,6 +115,15 @@ export default function OrderDetailPage() {
             <div className="text-3xl mb-2">😔</div>
             <p className="font-bold text-red-600">{order.status === 'cancelled' ? 'Order Cancelled' : 'Order Rejected'}</p>
             {(order as any).cancelled_reason && <p className="text-sm text-red-400 mt-1">{(order as any).cancelled_reason}</p>}
+          </div>
+        )}
+
+        {/* Delivery OTP — shown when rider is on the way */}
+        {order.status === 'picked_up' && (
+          <div className="rounded-2xl border-2 p-4 text-center" style={{ borderColor: '#7ED957', background: '#f0fce8' }}>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#5cb83a' }}>🔐 Delivery OTP</p>
+            <p className="text-4xl font-black tracking-[0.3em] my-2" style={{ color: '#2d6a12' }}>{getDeliveryOtp(order.id)}</p>
+            <p className="text-xs text-gray-500">Share this code with the delivery partner to confirm handover</p>
           </div>
         )}
 

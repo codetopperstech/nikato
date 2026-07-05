@@ -1,11 +1,20 @@
 'use client';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Settings, Save } from 'lucide-react';
+import { Settings, Save, Clock } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useShopStore } from '@/store/shop';
 import { toast } from '@/store/ui';
 import type { Shop } from '@/types';
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+type Day = typeof DAYS[number];
+type DayHours = { open: boolean; from: string; to: string };
+type OperatingHours = Record<Day, DayHours>;
+
+const DEFAULT_HOURS: OperatingHours = Object.fromEntries(
+  DAYS.map(d => [d, { open: true, from: '09:00', to: '21:00' }])
+) as OperatingHours;
 
 type FormValues = {
   name: string;
@@ -22,6 +31,14 @@ type FormValues = {
 export default function ShopSettingsPage() {
   const { shopData, setShop } = useShopStore();
   const [saving, setSaving] = useState(false);
+  const [hours, setHours] = useState<OperatingHours>(() => {
+    const stored = (shopData as any)?.operating_hours;
+    if (stored && typeof stored === 'object') return stored as OperatingHours;
+    return DEFAULT_HOURS;
+  });
+
+  const setDay = (day: Day, patch: Partial<DayHours>) =>
+    setHours(h => ({ ...h, [day]: { ...h[day], ...patch } }));
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
@@ -39,7 +56,11 @@ export default function ShopSettingsPage() {
 
   const onSubmit = async (values: FormValues) => {
     setSaving(true);
-    const res = await fetch('/api/shop/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
+    const res = await fetch('/api/shop/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...values, operating_hours: hours }),
+    });
     const data = await res.json();
     if (!res.ok) toast.error('Failed to save', data.error ?? '');
     else { setShop(data.shop as Shop); toast.success('Settings saved!'); }
@@ -105,6 +126,39 @@ export default function ShopSettingsPage() {
             onUploaded={(url) => setValue('logo_url', url)}
             label="Shop Logo / Banner"
           />
+        </div>
+
+        <div className="pt-2 border-t border-gray-100">
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5 mb-3">
+            <Clock size={12} /> Operating Hours
+          </label>
+          <div className="space-y-2">
+            {DAYS.map(day => (
+              <div key={day} className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDay(day, { open: !hours[day].open })}
+                  className={`relative w-10 h-5 rounded-full flex-shrink-0 transition-colors ${hours[day].open ? '' : 'bg-gray-200'}`}
+                  style={hours[day].open ? { background: '#7ED957' } : {}}>
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${hours[day].open ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
+                <span className={`text-xs font-semibold w-20 flex-shrink-0 ${hours[day].open ? 'text-gray-700' : 'text-gray-300'}`}>
+                  {day.slice(0, 3)}
+                </span>
+                {hours[day].open ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input type="time" value={hours[day].from} onChange={e => setDay(day, { from: e.target.value })}
+                      className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-[#7ED957]" />
+                    <span className="text-gray-400 text-xs">to</span>
+                    <input type="time" value={hours[day].to} onChange={e => setDay(day, { to: e.target.value })}
+                      className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-[#7ED957]" />
+                  </div>
+                ) : (
+                  <span className="text-xs text-gray-300 italic">Closed</span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <button type="submit" disabled={saving}

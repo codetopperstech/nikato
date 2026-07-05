@@ -16,7 +16,8 @@ export default function CreateShopPage() {
   const [form, setForm] = useState({
     owner_phone: '', owner_name: '', shop_name: '', shop_phone: '',
     address: '', city: '', pincode: '', latitude: '', longitude: '',
-    delivery_radius: '5', min_order: '100', commission: '0.1'
+    delivery_radius: '5', min_order: '100', commission: '0.1',
+    logo_url: '',
   })
 
   const handleSubmit = async () => {
@@ -73,7 +74,7 @@ export default function CreateShopPage() {
           <div key={f.key}>
             <label className="text-xs text-gray-500 uppercase font-medium">{f.label}</label>
             <input
-              className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-[#7ED957]"
               placeholder={f.placeholder}
               value={form[f.key as keyof typeof form]}
               onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
@@ -81,6 +82,16 @@ export default function CreateShopPage() {
           </div>
         ))}
       </div>
+
+      <div className="mt-5">
+        <ImageUpload
+          bucket="shop-images"
+          currentUrl={form.logo_url || null}
+          onUploaded={url => setForm(p => ({ ...p, logo_url: url }))}
+          label="Shop Logo / Banner"
+        />
+      </div>
+
       <button
         onClick={handleSubmit}
         disabled={loading}

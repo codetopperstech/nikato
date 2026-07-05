@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { owner_phone, owner_name, shop_name, shop_phone, address, city, pincode, latitude, longitude, delivery_radius, min_order, commission } = body
+    const { owner_phone, owner_name, shop_name, shop_phone, address, city, pincode, latitude, longitude, delivery_radius, min_order, commission, logo_url } = body
 
     const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       phone: owner_phone,
@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
         lat: parseFloat(latitude),
         lng: parseFloat(longitude),
         delivery_radius_km: parseFloat(delivery_radius),
+        min_order_amount: parseFloat(min_order) || 0,
+        commission_rate: parseFloat(commission) || 0.1,
+        logo_url: logo_url || null,
         is_approved: false,
       })
       .select()

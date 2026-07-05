@@ -7,6 +7,7 @@ import { ArrowLeft, Check, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from '@/store/ui';
 import { Button, Badge, Skeleton, Card } from '@/components/ui';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { formatPrice } from '@/lib/utils';
 import type { Shop } from '@/types';
 import { useState } from 'react';
@@ -15,6 +16,22 @@ export default function AdminShopDetailPage() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const [updating, setUpdating] = useState(false);
+  const [savingLogo, setSavingLogo] = useState(false);
+
+  async function saveLogo(url: string) {
+    setSavingLogo(true);
+    const res = await fetch('/api/admin/shops', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, logo_url: url || null }),
+    });
+    if (!res.ok) toast.error('Failed to save logo');
+    else {
+      qc.invalidateQueries({ queryKey: ['admin-shop', id] });
+      toast.success(url ? 'Logo updated' : 'Logo removed');
+    }
+    setSavingLogo(false);
+  }
 
   const { data: shop, isLoading } = useQuery<Shop & {
     owner: { full_name: string; phone: string; email: string | null };
@@ -91,6 +108,18 @@ export default function AdminShopDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Shop logo */}
+      <Card className="p-5">
+        <h2 className="text-sm font-bold text-gray-700 mb-3">Shop Logo / Banner</h2>
+        {savingLogo && <p className="text-xs text-gray-400 mb-2 animate-pulse">Saving…</p>}
+        <ImageUpload
+          bucket="shop-images"
+          currentUrl={shop.logo_url}
+          onUploaded={saveLogo}
+          label=""
+        />
+      </Card>
 
       <Card className="p-5 space-y-2">
         <h2 className="text-sm font-bold text-gray-700 mb-2">Shop Info</h2>
