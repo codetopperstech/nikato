@@ -2,14 +2,9 @@
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
 
 export default function CreateShopPage() {
   const router = useRouter()
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -25,17 +20,12 @@ export default function CreateShopPage() {
     setError('')
     setSuccess('')
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
-
       const res = await fetch('/api/admin/create-shop', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       })
+      if (res.status === 401) { router.push('/login'); return }
 
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Failed to create shop'); return }

@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-// ✅ Lazy client — created inside handler, not at module level (avoids build crash)
 function getAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,26 +11,25 @@ function getAdminClient() {
   )
 }
 
+async function verifyAdmin() {
+  const cookieStore = await cookies()
+  const uc = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await uc.auth.getUser()
+  if (!user) return null
+  const { data: profile } = await uc.from('profiles').select('role').eq('id', user.id).single()
+  return profile?.role === 'admin' ? user : null
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabaseAdmin = getAdminClient()
 
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Requires role: admin' }, { status: 403 })
-    }
+    const admin = await verifyAdmin()
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
     const { owner_phone, owner_name, shop_name, shop_phone, address, city, pincode, latitude, longitude, delivery_radius, min_order, commission, logo_url } = body

@@ -56,9 +56,16 @@ export async function POST(req: NextRequest) {
     const shopEarning = parseFloat((subtotal - commissionAmount).toFixed(2));
     const deliveryEarning = parseFloat((deliveryFee * 0.8).toFixed(2));
 
+    const decremented: { product_id: string; quantity: number }[] = [];
     for (const item of cart as {product_id: string; quantity: number}[]) {
-      const p = products.find(p => p.id === item.product_id)!;
-      await admin.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id).gte('stock', item.quantity);
+      const { error: stockErr } = await admin.rpc('decrement_stock', { p_product_id: item.product_id, p_quantity: item.quantity });
+      if (stockErr) {
+        // Rollback already-decremented items before returning
+        await Promise.all(decremented.map(d => admin.rpc('restore_stock', { p_product_id: d.product_id, p_quantity: d.quantity })));
+        const p = products.find(p => p.id === item.product_id)!;
+        return NextResponse.json({ error: `"${p.name}" is out of stock` }, { status: 422 });
+      }
+      decremented.push(item);
     }
 
     const orderNumber = `NKT-${Date.now()}`;
@@ -107,54 +114,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ order_id: order.id, order_number: orderNumber, razorpay_order_id: rzpOrder.id, key_id: keyId, amount: Math.round(totalAmount * 100), currency: 'INR' }, { status: 201 });
     }
 
-    // COD: stays 'pending' — shop must manually accept/reject
+    // COD: stays 'pending' — shop must confirm before a rider is assigned
     return NextResponse.json({ order_id: order.id, order_number: orderNumber, total_amount: totalAmount }, { status: 201 });
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 });
   }
-}
-
-async function assignCodDelivery(admin: ReturnType<typeof getAdminClient>, orderId: string) {
-  const { data: order } = await admin
-    .from('orders')
-    .select('id,order_number,shop_id,delivery_earning,delivery_address_id,addresses!delivery_address_id(lat,lng)')
-    .eq('id', orderId).single();
-  if (!order) return;
-
-  const addrRaw = order.addresses as unknown;
-  const addr: { lat: number; lng: number } | null = Array.isArray(addrRaw)
-    ? (addrRaw[0] ?? null) : (addrRaw as { lat: number; lng: number } | null);
-  if (!addr?.lat) return;
-
-  const { data: busy } = await admin.from('delivery_assignments')
-    .select('delivery_partner_id').in('status', ['assigned', 'picked_up']);
-  const busyIds = (busy ?? []).map((d: { delivery_partner_id: string }) => d.delivery_partner_id);
-
-  let q = admin.from('delivery_locations').select('delivery_partner_id,lat,lng').eq('is_online', true);
-  if (busyIds.length > 0) q = q.not('delivery_partner_id', 'in', `(${busyIds.join(',')})`);
-  const { data: partners } = await q;
-  if (!partners?.length) return;
-
-  const R = 6371;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const haversine = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-    const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  };
-
-  const nearby = (partners as { delivery_partner_id: string; lat: number; lng: number }[])
-    .map(p => ({ ...p, dist: haversine(addr.lat, addr.lng, p.lat, p.lng) }))
-    .filter(p => p.dist <= 3).sort((a, b) => a.dist - b.dist);
-  if (!nearby.length) return;
-
-  const partnerId = nearby[0].delivery_partner_id;
-  await admin.from('delivery_assignments').insert({ order_id: orderId, delivery_partner_id: partnerId, delivery_fee: order.delivery_earning, status: 'assigned' });
-  await admin.from('orders').update({ delivery_partner_id: partnerId }).eq('id', orderId);
-
-  const { data: shopOwner } = await admin.from('shops').select('owner_id').eq('id', order.shop_id).single();
-  await admin.from('notifications').insert([
-    { user_id: partnerId, title: 'New Delivery!', body: `Order ${order.order_number} assigned`, type: 'ORDER_UPDATE', data: { order_id: orderId } },
-    ...(shopOwner?.owner_id ? [{ user_id: shopOwner.owner_id, title: 'Rider Assigned', body: `Rider for ${order.order_number}`, type: 'ORDER_UPDATE', data: { order_id: orderId } }] : []),
-  ]);
 }

@@ -38,24 +38,32 @@ export function useRazorpay({ onSuccess, onFailure, onDismiss }: UseRazorpayOpti
           contact: (profile?.phone as string) ?? '',
           email: (profile?.email as string) ?? '',
         },
-        theme: { color: '#FF6B35' },
+        theme: { color: '#7ED957' },
       });
 
-      // Payment captured — verify server-side
-      const res = await fetch('/api/orders/verify-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: orderId,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_signature: response.razorpay_signature,
-        }),
-      });
+      // Payment captured — verify server-side (30 s timeout)
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30_000);
+      let res: Response;
+      try {
+        res = await fetch('/api/orders/verify-payment', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: orderId,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+          }),
+        });
+      } finally {
+        clearTimeout(timer);
+      }
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        toast.error('Payment verification failed', 'Contact support: ' + orderId);
+        toast.error('Payment verification failed. Contact support with order ID: ' + orderId);
         onFailure?.(orderId);
       } else {
         onSuccess(orderId);
@@ -63,14 +71,16 @@ export function useRazorpay({ onSuccess, onFailure, onDismiss }: UseRazorpayOpti
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg === 'PAYMENT_CANCELLED') {
-        // ✅ Cancel the pending order in DB — user dismissed without paying
         fetch('/api/orders/cancel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order_id: orderId, reason: 'Payment cancelled by user' }),
-        }).catch(() => {});
+        }).catch((e) => console.error('Order cancel failed after payment dismiss:', e));
         toast.info('Payment cancelled');
         onDismiss?.(orderId);
+      } else if (msg.includes('abort') || msg.includes('signal')) {
+        toast.error('Verification timed out. If amount was deducted, contact support: ' + orderId);
+        onFailure?.(orderId);
       } else {
         toast.error('Payment failed. Try again or use Cash on Delivery.');
         onFailure?.(orderId);

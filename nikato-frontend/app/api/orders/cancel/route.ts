@@ -40,14 +40,13 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     }).eq('id', order_id);
 
-    // Restore stock (best effort)
+    // Restore stock atomically via existing restore_stock RPC
     const { data: items } = await admin.from('order_items').select('product_id, quantity').eq('order_id', order_id);
-    for (const item of (items ?? []) as { product_id: string; quantity: number }[]) {
-      const { data: prod } = await admin.from('products').select('stock').eq('id', item.product_id).single();
-      if (prod) {
-        await admin.from('products').update({ stock: prod.stock + item.quantity }).eq('id', item.product_id);
-      }
-    }
+    await Promise.all(
+      (items ?? [] as { product_id: string; quantity: number }[]).map((item: { product_id: string; quantity: number }) =>
+        admin.rpc('restore_stock', { p_product_id: item.product_id, p_quantity: item.quantity })
+      )
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {
