@@ -127,6 +127,64 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── What are you looking for? ────────────────────── */}
+      <section className="px-4 py-6 bg-white border-b border-gray-100">
+        <div className="max-w-lg mx-auto">
+          <h2 className="text-lg font-black text-gray-900 mb-0.5">What are you looking for?</h2>
+          <p className="text-xs text-gray-400 mb-4">Everything you need, delivered to your door</p>
+
+          <div className="space-y-3">
+            {/* Grocery */}
+            <Link href="/shops?q=grocery"
+              className="group flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-100 overflow-hidden relative transition-all hover:shadow-md active:scale-[0.99]"
+              style={{ background: 'linear-gradient(135deg, #f0fce8 0%, #d4f5b6 100%)' }}>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl opacity-10 select-none pointer-events-none">🛒</div>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 bg-white/70 shadow-sm">🛒</div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-gray-900 text-base">Grocery & Essentials</p>
+                <p className="text-xs text-gray-500 mt-0.5">Fresh produce, dairy, snacks & more</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-green-800" style={{ background: '#7ED95730' }}>⚡ Delivered in 30 min</span>
+              </div>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/70">
+                <ArrowRight size={15} style={{ color: '#5cb83a' }} />
+              </div>
+            </Link>
+
+            {/* Food */}
+            <Link href="/shops?q=food"
+              className="group flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-100 overflow-hidden relative transition-all hover:shadow-md active:scale-[0.99]"
+              style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)' }}>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl opacity-10 select-none pointer-events-none">🍱</div>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 bg-white/70 shadow-sm">🍱</div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-gray-900 text-base">Food & Restaurants</p>
+                <p className="text-xs text-gray-500 mt-0.5">Hot meals from local restaurants</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-orange-800" style={{ background: '#F9731630' }}>🍽️ Order now</span>
+              </div>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/70">
+                <ArrowRight size={15} className="text-orange-500" />
+              </div>
+            </Link>
+
+            {/* Home Services */}
+            <Link href="/services/book"
+              className="group flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-100 overflow-hidden relative transition-all hover:shadow-md active:scale-[0.99]"
+              style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #c7d2fe 100%)' }}>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl opacity-10 select-none pointer-events-none">🔧</div>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 bg-white/70 shadow-sm">🔧</div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-gray-900 text-base">Home Services</p>
+                <p className="text-xs text-gray-500 mt-0.5">Plumber, electrician, beautician & more</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-indigo-800" style={{ background: '#6366F130' }}>📅 Book a slot</span>
+              </div>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/70">
+                <ArrowRight size={15} className="text-indigo-500" />
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── Category chips ───────────────────────────────── */}
       <section className="py-4 bg-white border-b border-gray-100">
         <div className="flex gap-2 px-4 overflow-x-auto no-scrollbar">
