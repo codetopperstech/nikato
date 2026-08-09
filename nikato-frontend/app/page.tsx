@@ -1,10 +1,19 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { MapPin, ArrowRight, Zap, Shield, ChevronRight, ShoppingBag, Bike } from 'lucide-react';
+import { MapPin, ArrowRight, Zap, Shield, ChevronRight, ShoppingBag, Bike, Star } from 'lucide-react';
 import { ShopCard } from '@/components/shop/ShopCard';
 import { Skeleton } from '@/components/ui';
 import type { Shop } from '@/types';
+
+const SERVICES = [
+  { label: 'Plumber',      slug: 'plumber',      emoji: '🔧', color: '#3B82F6' },
+  { label: 'Electrician',  slug: 'electrician',  emoji: '⚡', color: '#F59E0B' },
+  { label: 'Beautician',   slug: 'beautician',   emoji: '💅', color: '#EC4899' },
+  { label: 'Carpenter',    slug: 'carpenter',    emoji: '🪚', color: '#8B5CF6' },
+  { label: 'Painter',      slug: 'painter',      emoji: '🎨', color: '#7ED957' },
+  { label: 'Pest Control', slug: 'pest-control', emoji: '🪲', color: '#EF4444' },
+];
 
 const CATEGORIES = [
   { label: 'Grocery', emoji: '🛒', q: 'grocery' },
@@ -57,26 +66,43 @@ export default function HomePage() {
     <div className="min-h-screen pb-20" style={{ background: '#F9FBF8' }}>
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="px-4 pt-8 pb-10" style={{ background: 'linear-gradient(160deg, #f0fce8 0%, #e8f6ff 100%)' }}>
-        <div className="max-w-lg mx-auto">
-          {city && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mb-4 bg-white border border-gray-200 text-gray-600 shadow-sm">
+      <section className="px-4 pt-10 pb-14 relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #f0fce8 0%, #e8f6ff 100%)' }}>
+        {/* Decorative blobs */}
+        <div className="absolute -right-20 -top-20 w-72 h-72 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #7ED95740 0%, transparent 65%)' }} />
+        <div className="absolute -left-12 bottom-0 w-56 h-56 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #7CCBFF30 0%, transparent 65%)' }} />
+
+        <div className="max-w-lg mx-auto relative">
+          {city ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mb-5 bg-white border border-gray-200 text-gray-600 shadow-sm">
               <MapPin size={11} style={{ color: '#5cb83a' }} /> Delivering to: <span className="text-gray-900 font-bold">{city}</span>
             </div>
-          )}
-          {!city && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mb-4" style={{ background: '#7ED957', color: 'white' }}>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mb-5" style={{ background: '#7ED957', color: 'white' }}>
               <Zap size={12} /> Delivery in 30 mins
             </div>
           )}
-          <h1 className="text-3xl font-black text-gray-900 leading-tight mb-3">
+
+          <h1 className="text-4xl font-black text-gray-900 leading-tight mb-3">
             Your neighbourhood,<br />
             <span style={{ color: '#5cb83a' }}>delivered fast</span>
           </h1>
-          <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+          <p className="text-gray-500 text-sm mb-4 leading-relaxed">
             Fresh groceries, hot food, and daily essentials from shops right around you.
           </p>
-          <div className="flex flex-wrap gap-3">
+
+          {/* Inline trust signals */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-1">
+              {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="#F59E0B" stroke="none" />)}
+              <span className="text-xs font-bold text-gray-700 ml-1">4.8</span>
+            </div>
+            <div className="w-px h-3.5 bg-gray-300" />
+            <span className="text-xs font-semibold text-gray-500">500+ happy customers</span>
+            <div className="w-px h-3.5 bg-gray-300" />
+            <span className="text-xs font-semibold text-gray-500">⚡ 30 min</span>
+          </div>
+
+          <div className="flex flex-wrap gap-3 mb-6">
             <Link href="/shops"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95"
               style={{ background: '#7ED957', boxShadow: '0 4px 16px rgba(126,217,87,0.35)' }}>
@@ -87,6 +113,16 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm border-[1.5px] border-gray-300 bg-white text-gray-700 hover:border-gray-400 transition-all active:scale-95">
               How it works
             </button>
+          </div>
+
+          {/* Floating live card */}
+          <div className="inline-flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-md border border-gray-100">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: '#7ED95715' }}>🛵</div>
+            <div>
+              <p className="text-xs font-black text-gray-900 leading-tight">Riders ready near you</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Fast delivery available right now</p>
+            </div>
+            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 animate-pulse" style={{ background: '#7ED957' }} />
           </div>
         </div>
       </section>
@@ -100,6 +136,32 @@ export default function HomePage() {
               <span>{emoji}</span> {label}
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* ── Home Services ────────────────────────────────── */}
+      <section className="px-4 py-6 bg-white border-b border-gray-100">
+        <div className="max-w-lg mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-black text-gray-900">Home Services</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Book a professional, at your doorstep</p>
+            </div>
+            <Link href="/services/book" className="text-sm font-semibold flex items-center gap-1" style={{ color: '#5cb83a' }}>
+              Book now <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {SERVICES.map(({ label, slug, emoji, color }) => (
+              <Link key={slug} href={`/services/book?service=${slug}`}
+                className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-gray-100 bg-white hover:border-[#7ED957] hover:shadow-sm transition-all active:scale-95">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ background: color + '15' }}>
+                  {emoji}
+                </div>
+                <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
