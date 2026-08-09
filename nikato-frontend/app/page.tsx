@@ -318,7 +318,7 @@ export default function HomePage() {
             <p className="font-bold text-white text-sm">Own a local shop?</p>
             <p className="text-xs text-gray-400 mt-0.5">Join nikato and reach customers near you</p>
           </div>
-          <Link href="/login"
+          <Link href="/partner"
             className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:opacity-90"
             style={{ background: '#7ED957', color: 'white' }}>
             Partner with us <ArrowRight size={14} />
@@ -342,16 +342,24 @@ export default function HomePage() {
             <div>
               <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">Company</p>
               <div className="space-y-2">
-                {['About us', 'Careers', 'Blog'].map(l => (
-                  <Link key={l} href="#" className="block text-gray-400 text-sm hover:text-white transition-colors">{l}</Link>
+                {[
+                  { label: 'About us',  href: '#' },
+                  { label: 'Careers',   href: '#' },
+                  { label: 'Blog',      href: '#' },
+                ].map(({ label, href }) => (
+                  <Link key={label} href={href} className="block text-gray-400 text-sm hover:text-white transition-colors">{label}</Link>
                 ))}
               </div>
             </div>
             <div>
               <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">Partner</p>
               <div className="space-y-2">
-                {['Sell on nikato', 'Deliver with us', 'Advertise'].map(l => (
-                  <Link key={l} href="#" className="block text-gray-400 text-sm hover:text-white transition-colors">{l}</Link>
+                {[
+                  { label: 'Sell on nikato',   href: '/partner' },
+                  { label: 'Deliver with us',  href: '/login' },
+                  { label: 'Advertise',        href: '/partner' },
+                ].map(({ label, href }) => (
+                  <Link key={label} href={href} className="block text-gray-400 text-sm hover:text-white transition-colors">{label}</Link>
                 ))}
               </div>
             </div>
