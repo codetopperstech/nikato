@@ -197,32 +197,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Home Services ────────────────────────────────── */}
-      <section className="px-4 py-6 bg-white border-b border-gray-100">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-black text-gray-900">Home Services</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Book a professional, at your doorstep</p>
-            </div>
-            <Link href="/services/book" className="text-sm font-semibold flex items-center gap-1" style={{ color: '#5cb83a' }}>
-              Book now <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {SERVICES.map(({ label, slug, emoji, color }) => (
-              <Link key={slug} href={`/services/book?service=${slug}`}
-                className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-gray-100 bg-white hover:border-[#7ED957] hover:shadow-sm transition-all active:scale-95">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ background: color + '15' }}>
-                  {emoji}
-                </div>
-                <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Promo banner ─────────────────────────────────── */}
       <section className="px-4 pt-5">
         <div className="max-w-lg mx-auto">
