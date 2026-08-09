@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle, Loader2, Store } from 'lucide-react';
 
-const BUSINESS_TYPES = ['Grocery', 'Restaurant / Food', 'Bakery', 'Pharmacy', 'Dairy', 'Stationery', 'Beverages', 'Other'];
+const BUSINESS_TYPES = ['Grocery', 'Restaurant / Food', 'Bakery', 'Pharmacy', 'Dairy', 'Stationery', 'Beverages', 'Home Service', 'Other'];
 
 export default function PartnerPage() {
   const router = useRouter();
