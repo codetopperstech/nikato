@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingBag, Store, Users, BarChart2, Percent, Plus, Truck, Handshake, ArrowLeft, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Store, Users, BarChart2, Percent, Plus, Truck, Handshake, Wrench, ArrowLeft, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { Spinner } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ const NAV = [
   { href: '/admin/analytics',         icon: BarChart2,       label: 'Analytics' },
   { href: '/admin/commissions',       icon: Percent,         label: 'Commissions' },
   { href: '/admin/partners',          icon: Handshake,       label: 'Partners' },
+  { href: '/admin/services',          icon: Wrench,          label: 'Services' },
 ];
 
 const ACTIONS = [

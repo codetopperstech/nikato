@@ -167,7 +167,7 @@ export default function HomePage() {
             </Link>
 
             {/* Home Services */}
-            <Link href="/services/book"
+            <Link href="/services"
               className="group flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-100 overflow-hidden relative transition-all hover:shadow-md active:scale-[0.99]"
               style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #c7d2fe 100%)' }}>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl opacity-10 select-none pointer-events-none">🔧</div>
